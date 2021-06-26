@@ -1,0 +1,56 @@
+### 进阶一：基础查询
+**一、查询语句语法：**select 查询列 表 from 表名
+
+> 实例：SELECT first_name FROM employees;
+>
+
+**二、查询函数**：
+
+> SELECT  USER();
+
+**三、起别名**
+
+注意点：
+
+在起别名的时候，如果有多个数据在一行，其别名位置为最近的哪一个
+
+```sql
+SELECT employee_id,last_name,salary,salary*1.2 "new salary"
+#即为salary*1.2的别名
+```
+
+> **情况一：使用as关键字**
+>
+> >  ```sql
+> >  SELECT `department_id` AS "部门_id"
+> >  FROM departments;
+> >  ```
+>
+> **情况二：使用空格替代as关键字**
+>
+> > ```sql
+> > SELECT `department_id`  "部门_id"
+> > FROM dep artments;
+> > ```
+
+**四、连接操作**
+
+> ```sql
+> SELECT 
+> CONCAT(
+>  department_name,
+>  IFNULL(manager_id, " "),
+>  IFNULL(location_id, " ")
+> ) 
+> FROM
+> departments;
+> ```
+>
+> 
+
+**五、去除重复的元素(distinct 关键字的使用)**
+
+> ```sql
+> SELECT DISTINCT job_id 
+> FROM employees;
+> ```

@@ -1,0 +1,15 @@
+方式一：通过在头部直接写修饰语句来调用
+
+```HTML
+<script type="text/javascript">
+    alert("maybe");
+</script>
+```
+
+方式二：通过调用js文件来调用
+
+```html
+<script type="text/javascript" src="js.js">
+
+</script>
+```

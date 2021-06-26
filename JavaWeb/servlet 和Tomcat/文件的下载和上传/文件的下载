@@ -1,0 +1,30 @@
+```java
+@Override
+protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    //1.获取下载的文件名
+    String downloadFileName = "2.jpg";
+    ServletContext servletContext = getServletContext();
+
+    //5.告诉客户端是用于下载
+    /**
+     * Content-Disposition 表示响应头，表示数据应该怎样处理
+     * attachment：表示附录文件
+     * filename：下载的文件名
+     */
+    resp.setHeader("Content-Disposition","attachment;filename");
+
+    //4.在回传前通过响应头，告诉客户端下载的数据类型
+    	//这里存在浏览器兼容问题（待解决）
+    String type = servletContext.getMimeType("/file/" + downloadFileName + URLEncoder.encode("中国.jpg","UTF-8"));//获取下载的类型
+      //回传
+    resp.setContentType(type);
+
+    //2.读取文件内容(通过servletContext对象获取)
+
+    InputStream resourceAsStream = servletContext.getResourceAsStream("/file/" + downloadFileName);
+
+    //3.把下载的内容回传给客户端
+    ServletOutputStream outputStream = resp.getOutputStream();
+    IOUtils.copy(resourceAsStream,outputStream);
+```
+

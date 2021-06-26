@@ -1,0 +1,52 @@
+### IOC(**Inversion of Control**)：**反转控制**
+
+> 在应用程序中的组件需要获取资源时，传统的方式是组件主动的从容器中获取所需要的资源，在这样的模式下开发人员往往需要知道在具体容器中特定资源的获取方式，增加了学习成本，同时降低了开发效率。
+>
+> 反转控制的思想完全颠覆了应用程序组件获取资源的传统方式：反转了资源的获取方向——改由容器主动的将资源推送给需要的组件，开发人员不需要知道容器是如何创建资源对象的，只需要提供接收资源的方式即可，极大的降低了学习成本，提高了开发的效率。这种行为也称为查找的被动形式。
+
+### ioc的使用
+
+**一、导包**
+
+> 导入IOC部分的配置jar包
+
+**二、配置文件**
+
+> 先创建出文件
+>
+> ![image-20210303152957858](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210303152957858.png)
+>
+> **然后再在文件中配置**
+
+**三、调用**
+
+> ```java
+> //ApplicationContext代表ioc容器
+> 
+> ApplicationContext ioc = new ClassPathXmlApplicationContext("ioc.xml");
+> person person1 = (person) ioc.getBean("person01");
+> ```
+
+**细节说明：**
+
+> 一、 在配置文件中获取和赋值属性配置，是通过get和set方法来进行的
+>
+> 二、在创建ioc容器的时候对象就被创建了
+>
+> 三、在容器中多次获取同一个类的对象是同一个对象
+>
+> 四、获取容器中没有的对象，会报异常
+>
+> 五、在对ioc容器配置文件路径可以有两种选择：
+>
+> ​		这是当前工程下的路径文件
+>
+> ```java
+> ClassPathXmlApplicationContext("ioc.xml");
+> ```
+>
+> ​		这是基于系统文件下的路径创建方式
+>
+> ```java
+> new FileSystemXmlApplicationContext()
+> ```

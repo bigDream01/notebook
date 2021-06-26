@@ -1,0 +1,132 @@
+### 最终版（常用版）
+
+```java
+public void test5() throws Exception {
+    //1.读取配置文件信息
+    InputStream is = test1.class.getClassLoader().getResourceAsStream("jdbc.propertice");
+
+    Properties pros = new Properties();
+    pros.load(is);
+
+    //获取配置文件信息
+    String user = pros.getProperty("user");
+    String password = pros.getProperty("password");
+    String url = pros.getProperty("url");
+    String driver = pros.getProperty("driver");
+   //获取连接的类
+    Class.forName(driver);
+    //进行连接
+    Connection con = DriverManager.getConnection(url, user, password);
+    System.out.println(con);
+
+}
+```
+
+**或者**：
+
+```java
+//读取配置文件
+Properties pros = new Properties();
+pros.load(new FileInputStream("jdbc.propertice"));
+
+String user = pros.getProperty("user");
+String url = pros.getProperty("url");
+String Password = pros.getProperty("password");
+String driver = pros.getProperty("driver");
+
+//注册驱动
+Class.forName(driver);
+//获取连接
+Connection connection = DriverManager.getConnection(url, user, Password);
+```
+
+### 内层剖析
+
+```java
+//方式一
+@Test
+public void test1() throws SQLException {
+
+    Driver driver = new com.mysql.jdbc.Driver();
+
+    //test：指的数据库
+    //jdbc：是指mysql协议
+    //localhost：IP地址
+    //3306：默认mysql的端口号
+    String url = "jdbc:mysql://localhost:3306/test";
+
+    //将用户和密码封装在properties中
+    Properties info = new Properties();
+
+    info.setProperty("user","root");
+    info.setProperty("password","1999826wwb");
+
+    Connection conn = driver.connect(url,info);
+    conn.close();
+    System.out.println(conn);
+
+}
+
+//方式二：使得程序具有更好的移植性
+@Test
+public void test2() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SQLException {
+
+    //1.获取driver实现类对象(反射)
+    Class<?> Clazz = Class.forName("com.mysql.jdbc.Driver");
+   Driver driver = (Driver) Clazz.newInstance();
+
+    String url = "jdbc:mysql://localhost:3306/test";
+    //将用户和密码封装在properties中
+    Properties info = new Properties();
+    info.setProperty("user","root");
+    info.setProperty("password","1999826wwb");
+
+    Connection conn = driver.connect(url,info);
+
+    System.out.println(conn);
+    conn.close();
+
+}
+//方式三：使用对登录时进行优化
+
+@Test
+public void test3() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SQLException {
+
+    //1.获取driver实现类对象(反射)
+    Class<?> Clazz = Class.forName("com.mysql.jdbc.Driver");
+    Driver driver = (Driver) Clazz.newInstance();
+
+    //2.提供基本信息
+    String url = "jdbc:mysql://localhost:3306/test";
+    String user = "root";
+    String password = "1999826wwb";
+
+    //注册驱动
+    DriverManager.registerDriver(driver);
+
+    //获取连接
+    Connection connection = DriverManager.getConnection(url, user, password);
+
+    System.out.println(connection);
+
+}
+//对创建类进行优化
+@Test
+public void test4() throws ClassNotFoundException, SQLException {
+    //1.提供基本信息
+    String url = "jdbc:mysql://localhost:3306/test";
+    String user = "root";
+    String password = "1999826wwb";
+
+    //2.获取driver实现类的对象
+    Class.forName("com.mysql.jdbc.Driver");
+    //因为在其driver实现类中，存在静态方法来实现driver类，这样就可以
+    //随着类的加载那么其对象也就直接存在了
+
+    //3.获取连接
+    Connection connection = DriverManager.getConnection(url, user, password);
+
+    System.out.println(connection);
+
+}
+```

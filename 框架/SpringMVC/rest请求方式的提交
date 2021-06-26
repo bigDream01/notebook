@@ -1,0 +1,86 @@
+### 含义
+
+> 主要是通过请求方式来判断，其对应的方法和处理类
+>
+> put ： 添加
+>
+> delete  : 对应删除
+>
+> post  ： 对应修改
+>
+> get ： 对应查询
+
+### 执行步骤（针对浏览器不支持的请求方式put/delete）
+
+> 一、先在浏览器端的对应请求中找到hidden参数name值为_method() 设置其对应的请求类型
+>
+> ```jsp
+> <form action="book/1" method="post">
+>   <input type="hidden" name="_method" value="PUT">
+>   <input type="submit" value="添加图书">
+> </form>
+> ```
+>
+> 二、在web.xml中配置过滤器，过滤的类为HiddenHttpMethodFilter类的filter过滤
+>
+> ```xml
+> <filter>
+>     <filter-name>HiddenHttpMethodFilter</filter-name>
+>     <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+> </filter>
+> <filter-mapping>
+>     <filter-name>HiddenHttpMethodFilter</filter-name>
+>     <url-pattern>/*</url-pattern>
+> </filter-mapping>
+> ```
+>
+> 三、在对应的方法或者类中设置请求类型参数
+>
+> ```java
+> @RequestMapping(value = "/book/{id}",method = RequestMethod.DELETE)
+> public String deleteBook(@PathVariable("id")String id ){
+>     System.out.println("删除图书");
+>     return "success";
+> }
+> ```
+>
+> **细节**
+>
+> > 对于tomcat8.0及以上的版本会存在请求找不到的问题，
+> >
+> > 解决方法如下：**设置iserrorpage参数为true**
+> >
+> > ![image-20210328163850170](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210328163850170.png)
+
+**源码分析**
+
+
+
+```java
+/** Default method parameter: {@code _method} */
+public static final String DEFAULT_METHOD_PARAM = "_method";
+ //在这个位置获取到参数的值
+private String methodParam = DEFAULT_METHOD_PARAM;
+```
+
+```java
+@Override
+protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
+	
+   //在这个位置获取到参数的值
+   String paramValue = request.getParameter(this.methodParam);
+    //判断是否是post和空串
+   if ("POST".equals(request.getMethod()) && StringUtils.hasLength(paramValue)) {
+       //转化为大写
+      String method = paramValue.toUpperCase(Locale.ENGLISH);
+       //自己重新new了一个httpservlet对象然后将这个方法的参数加入其中，覆盖之前的requst对象
+      HttpServletRequest wrapper = new HttpMethodRequestWrapper(request, method);
+      filterChain.doFilter(wrapper, response);
+   }
+   else {
+      filterChain.doFilter(request, response);
+   }
+}
+```
+

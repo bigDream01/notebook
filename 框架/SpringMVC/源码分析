@@ -1,0 +1,699 @@
+### SpringMVC内部方法调用逻辑
+
+> ![image-20210406093533428](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210406093533428.png)
+
+### doDispatch调用逻辑顺序
+
+> ```java
+> protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+>    HttpServletRequest processedRequest = request;
+>    HandlerExecutionChain mappedHandler = null;
+>    boolean multipartRequestParsed = false;
+> 
+>    WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+> 
+>    try {
+>       ModelAndView mv = null;
+>       Exception dispatchException = null;
+> 
+>       try {
+>           //零、检查是否文件上传请求
+>          processedRequest = checkMultipart(request);
+>          multipartRequestParsed = processedRequest != request;
+> 
+>          // 一、获取到时那个handler执行的程序
+>          mappedHandler = getHandler(processedRequest);
+>          if (mappedHandler == null || mappedHandler.getHandler() == null) {
+>             noHandlerFound(processedRequest, response);
+>             return;
+>          }
+> 
+>          // Determine handler adapter for the current request.
+>          //二、获取当前请求的适配器
+>          HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+> 
+>          // Process last-modified header, if supported by the handler.
+>          //三、获取当前方法的请求方式
+>          String method = request.getMethod();
+>          boolean isGet = "GET".equals(method);
+>          if (isGet || "HEAD".equals(method)) {
+>             long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
+>             if (logger.isDebugEnabled()) {
+>                String requestUri = urlPathHelper.getRequestUri(request);
+>                logger.debug("Last-Modified value for [" + requestUri + "] is: " + lastModified);
+>             }
+>             if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
+>                return;
+>             }
+>          }
+> 
+>          if (!mappedHandler.applyPreHandle(processedRequest, response)) {
+>             return;
+>          }
+> 
+>          try {
+>             // Actually invoke the handler.
+>             //四、执行方法的程序，转发地址和域数据保存在ModelAndView中
+>             mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+>          }
+>          finally {
+>             if (asyncManager.isConcurrentHandlingStarted()) {
+>                return;
+>             }
+>          }
+> 
+>          applyDefaultViewName(request, mv);
+>          mappedHandler.applyPostHandle(processedRequest, response, mv);
+>       }
+>       catch (Exception ex) {
+>          dispatchException = ex;
+>       }
+>        //五、请求转发到页面
+>       processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+>    }
+>    catch (Exception ex) {
+>       triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
+>    }
+>    catch (Error err) {
+>       triggerAfterCompletionWithError(processedRequest, response, mappedHandler, err);
+>    }
+>    finally {
+>       if (asyncManager.isConcurrentHandlingStarted()) {
+>          // Instead of postHandle and afterCompletion
+>          mappedHandler.applyAfterConcurrentHandlingStarted(processedRequest, response);
+>          return;
+>       }
+>       // Clean up any resources used by a multipart request.
+>       if (multipartRequestParsed) {
+>          cleanupMultipart(processedRequest);
+>       }
+>    }
+> }
+> ```
+>
+> **执行顺序：**
+>
+> > ①、getHandler(): 根据请求地址获取到能处理这个请求的目标类
+> >
+> > ②、getHandlerAdapte() ：获取当前目标类请求的适配器
+> >
+> > ③、获取请求方式
+> >
+> > ④、ha.handle：适配器调用方法执行程序
+> >
+> > ⑤、 processDispatchResult：请求转发到页面
+
+#### getHandler（）执行细节
+
+> 在 this.handlerMappings 主要是存在两个执行链
+>
+> > 第一个使用xml配置的执行链
+> >
+> > 第二个是使用注解的执行链，
+> >
+> > 在开始的时候服务器会将这些执行地址装入到这些执行链中
+>
+> ![image-20210406104010029](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210406104010029.png)
+>
+> ```java
+> /**
+>  * Return the HandlerExecutionChain for this request.
+>  * <p>Tries all handler mappings in order.
+>  * @param request current HTTP request
+>  * @return the HandlerExecutionChain, or {@code null} if no handler could be found
+>  */
+> protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+>    for (HandlerMapping hm : this.handlerMappings) {
+>       if (logger.isTraceEnabled()) {
+>          logger.trace(
+>                "Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
+>       }
+>       HandlerExecutionChain handler = hm.getHandler(request);
+>       if (handler != null) {
+>          return handler;
+>       }
+>    }
+>    return null;
+> }
+> ```
+
+#### getHandlerAdapter()细节
+
+> **类似于获取类的方法**
+>
+> ![image-20210406105517046](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210406105517046.png)
+>
+> **处理器中只要有方法标注了注解就能使用**
+>
+> ```java
+> /**
+>  * Return the HandlerAdapter for this handler object.
+>  * @param handler the handler object to find an adapter for
+>  * @throws ServletException if no HandlerAdapter can be found for the handler. This is a fatal error.
+>  */
+> protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
+>    for (HandlerAdapter ha : this.handlerAdapters) {
+>       if (logger.isTraceEnabled()) {
+>          logger.trace("Testing handler adapter [" + ha + "]");
+>       }
+>       if (ha.supports(handler)) {
+>          return ha;
+>       }
+>    }
+>    throw new ServletException("No adapter for handler [" + handler +
+>          "]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
+> }
+> ```
+
+#### springMVC的九大组件
+
+> ```java
+> /** 文件上传解析器 */
+> private MultipartResolver multipartResolver;
+> 
+> /** 区域信息化解析器和国际化有关 */
+> private LocaleResolver localeResolver;
+> 
+> /** 主题解析器 */
+> private ThemeResolver themeResolver;
+> 
+> /** handler映射信息 */
+> private List<HandlerMapping> handlerMappings;
+> 
+> /** handler的适配器 */
+> private List<HandlerAdapter> handlerAdapters;
+> 
+> /** 异常解析器 */
+> private List<HandlerExceptionResolver> handlerExceptionResolvers;
+> 
+> /** RequestToViewNameTranslator used by this servlet */
+> private RequestToViewNameTranslator viewNameTranslator;
+> 
+> /** FlashMap+Manager：springMVC中重定向携带数据功能 */
+> private FlashMapManager flashMapManager;
+> 
+> /** 视图解析器*/
+> private List<ViewResolver> viewResolvers;
+> ```
+>
+> **相同点**
+>
+> > 全是接口
+>
+> **初始化位置**
+>
+> > ```java
+> > protected void initStrategies(ApplicationContext context) {
+> >    initMultipartResolver(context);
+> >    initLocaleResolver(context);
+> >    initThemeResolver(context);
+> >    initHandlerMappings(context);
+> >    initHandlerAdapters(context);
+> >    initHandlerExceptionResolvers(context);
+> >    initRequestToViewNameTranslator(context);
+> >    initViewResolvers(context);
+> >    initFlashMapManager(context);
+> > }
+> > ```
+> >
+> > ```java
+> > private void initHandlerMappings(ApplicationContext context) {
+> >    this.handlerMappings = null;
+> > 
+> >    if (this.detectAllHandlerMappings) {
+> >       // Find all HandlerMappings in the ApplicationContext, including ancestor contexts.
+> >       Map<String, HandlerMapping> matchingBeans =
+> >             BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class, true, false);
+> >       if (!matchingBeans.isEmpty()) {
+> >          this.handlerMappings = new ArrayList<HandlerMapping>(matchingBeans.values());
+> >          // We keep HandlerMappings in sorted order.
+> >          OrderComparator.sort(this.handlerMappings);
+> >       }
+> >    }
+> >    else {
+> >       try {
+> >          HandlerMapping hm = context.getBean(HANDLER_MAPPING_BEAN_NAME, HandlerMapping.class);
+> >          this.handlerMappings = Collections.singletonList(hm);
+> >       }
+> >       catch (NoSuchBeanDefinitionException ex) {
+> >          // Ignore, we'll add a default HandlerMapping later.
+> >       }
+> >    }
+> > ```
+>
+> **组件的初始化：**
+>
+> 去容器中找这个组件，如果没有找到就用默认的配置
+>
+> MultipartResolver：没找到是用的null
+
+#### ha.handle的源码分析
+
+> ```java
+> @Override
+> public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler)
+> throws Exception {
+> 
+> Class<?> clazz = ClassUtils.getUserClass(handler);
+> Boolean annotatedWithSessionAttributes = this.sessionAnnotatedClassesCache.get(clazz);
+> if (annotatedWithSessionAttributes == null) {
+> annotatedWithSessionAttributes = (AnnotationUtils.findAnnotation(clazz, SessionAttributes.class) != null);
+> this.sessionAnnotatedClassesCache.put(clazz, annotatedWithSessionAttributes);
+> }
+> 
+> if (annotatedWithSessionAttributes) {
+> // Always prevent caching in case of session attribute management.
+> checkAndPrepare(request, response, this.cacheSecondsForSessionAttributeHandlers, true);
+> // Prepare cached set of session attributes names.
+> }
+> else {
+> // Uses configured default cacheSeconds setting.
+> checkAndPrepare(request, response, true);
+> }
+> 
+> // Execute invokeHandlerMethod in synchronized block if required.
+> if (this.synchronizeOnSession) {
+> HttpSession session = request.getSession(false);
+> if (session != null) {
+>    Object mutex = WebUtils.getSessionMutex(session);
+>    synchronized (mutex) {
+>       return invokeHandlerMethod(request, response, handler);
+>    }
+> }
+> }
+> 
+> return invokeHandlerMethod(request, response, handler);
+> }
+> ```
+>
+> **进入invokeHandlerMethod（）方法**
+>
+> ```java
+> protected ModelAndView invokeHandlerMethod(HttpServletRequest request, HttpServletResponse response, Object handler)
+> throws Exception {
+> 
+> //获取这个handler的方法解析器
+> ServletHandlerMethodResolver methodResolver = getMethodResolver(handler);
+> //获取当前方法
+> Method handlerMethod = methodResolver.resolveHandlerMethod(request);
+> //创建一个反射方法
+> ServletHandlerMethodInvoker methodInvoker = new ServletHandlerMethodInvoker(methodResolver);
+> //包装原生的requst和response
+> ServletWebRequest webRequest = new ServletWebRequest(request, response);
+> 
+> //创建了一个隐含模型！！！！！！！！！！！！！！存储位置
+> ExtendedModelMap implicitModel = new BindingAwareModelMap();
+> 
+> //执行反射方法
+> Object result = methodInvoker.invokeHandlerMethod(handlerMethod, handler, webRequest, implicitModel);
+> ModelAndView mav =
+>    methodInvoker.getModelAndView(handlerMethod, handler.getClass(), result, implicitModel, webRequest);
+> methodInvoker.updateModelAttributes(handler, (mav != null ? mav.getModel() : null), implicitModel, webRequest);
+> return mav;
+> }
+> ```
+>
+> **进入invokeHandlerMethod方法**
+>
+> ```java
+> public final Object invokeHandlerMethod(Method handlerMethod, Object handler,
+> NativeWebRequest webRequest, ExtendedModelMap implicitModel) throws Exception {
+> 
+>  //找到要执行的方法
+> Method handlerMethodToInvoke = BridgeMethodResolver.findBridgedMethod(handlerMethod);
+> try {
+> boolean debug = logger.isDebugEnabled();
+>  //查看session中是否存在参数值
+> for (String attrName : this.methodResolver.getActualSessionAttributeNames()) {
+>    Object attrValue = this.sessionAttributeStore.retrieveAttribute(webRequest, attrName);
+>    if (attrValue != null) {
+>       implicitModel.addAttribute(attrName, attrValue);
+>    }
+> }
+>  //1.获取所有标注了@ModelAttribute注解的方法
+> for (Method attributeMethod : this.methodResolver.getModelAttributeMethods()) {
+>    Method attributeMethodToInvoke = BridgeMethodResolver.findBridgedMethod(attributeMethod);
+>     //获取方法的参数
+>    Object[] args = resolveHandlerArguments(attributeMethodToInvoke, handler, webRequest, implicitModel);
+>    if (debug) {
+>       logger.debug("Invoking model attribute method: " + attributeMethodToInvoke);
+>    }
+>    String attrName = AnnotationUtils.findAnnotation(attributeMethod, ModelAttribute.class).value();
+>    if (!"".equals(attrName) && implicitModel.containsAttribute(attrName)) {
+>       continue;
+>    }
+>     //设置其是可访问的
+>    ReflectionUtils.makeAccessible(attributeMethodToInvoke);
+>     //执行方法
+>    Object attrValue = attributeMethodToInvoke.invoke(handler, args);
+>    if ("".equals(attrName)) {
+>       Class<?> resolvedType = GenericTypeResolver.resolveReturnType(attributeMethodToInvoke, handler.getClass());
+>       attrName = Conventions.getVariableNameForReturnType(attributeMethodToInvoke, resolvedType, attrValue);
+>    }
+>    if (!implicitModel.containsAttribute(attrName)) {
+>       implicitModel.addAttribute(attrName, attrValue);
+>    }
+> }
+>  //这里获取所有的参数
+> Object[] args = resolveHandlerArguments(handlerMethodToInvoke, handler, webRequest, implicitModel);
+> if (debug) {
+>    logger.debug("Invoking request handler method: " + handlerMethodToInvoke);
+> }
+> ReflectionUtils.makeAccessible(handlerMethodToInvoke);
+> return handlerMethodToInvoke.invoke(handler, args);
+> }
+> catch (IllegalStateException ex) {
+> // Internal assertion failed (e.g. invalid signature):
+> // throw exception with full handler method context...
+> throw new HandlerMethodInvocationException(handlerMethodToInvoke, ex);
+> }
+> catch (InvocationTargetException ex) {
+> // User-defined @ModelAttribute/@InitBinder/@RequestMapping method threw an exception...
+> ReflectionUtils.rethrowException(ex.getTargetException());
+> return null;
+> }
+> }
+> ```
+>
+> **进入 resolveHandlerArguments获取参数的每一个值;**
+>
+> ```java
+> private Object[] resolveHandlerArguments(Method handlerMethod, Object handler,
+> NativeWebRequest webRequest, ExtendedModelMap implicitModel) throws Exception {
+> 
+> Class<?>[] paramTypes = handlerMethod.getParameterTypes();
+> Object[] args = new Object[paramTypes.length];
+> 
+> for (int i = 0; i < args.length; i++) {
+> MethodParameter methodParam = new MethodParameter(handlerMethod, i);
+> methodParam.initParameterNameDiscovery(this.parameterNameDiscoverer);
+> GenericTypeResolver.resolveParameterType(methodParam, handler.getClass());
+> String paramName = null;
+> String headerName = null;
+> boolean requestBodyFound = false;
+> String cookieName = null;
+> String pathVarName = null;
+> String attrName = null;
+> boolean required = false;
+> String defaultValue = null;
+> boolean validate = false;
+> Object[] validationHints = null;
+> int annotationsFound = 0;
+> Annotation[] paramAnns = methodParam.getParameterAnnotations();
+> 
+>  //找到目标方法参数的注解，如果有注解，就解析保存注解的信息
+> for (Annotation paramAnn : paramAnns) {
+>    if (RequestParam.class.isInstance(paramAnn)) {
+>       RequestParam requestParam = (RequestParam) paramAnn;
+>       paramName = requestParam.value();
+>       required = requestParam.required();
+>       defaultValue = parseDefaultValueAttribute(requestParam.defaultValue());
+>       annotationsFound++;
+>    }
+>    else if (RequestHeader.class.isInstance(paramAnn)) {
+>       RequestHeader requestHeader = (RequestHeader) paramAnn;
+>       headerName = requestHeader.value();
+>       required = requestHeader.required();
+>       defaultValue = parseDefaultValueAttribute(requestHeader.defaultValue());
+>       annotationsFound++;
+>    }
+>    else if (RequestBody.class.isInstance(paramAnn)) {
+>       requestBodyFound = true;
+>       annotationsFound++;
+>    }
+>    else if (CookieValue.class.isInstance(paramAnn)) {
+>       CookieValue cookieValue = (CookieValue) paramAnn;
+>       cookieName = cookieValue.value();
+>       required = cookieValue.required();
+>       defaultValue = parseDefaultValueAttribute(cookieValue.defaultValue());
+>       annotationsFound++;
+>    }
+>    else if (PathVariable.class.isInstance(paramAnn)) {
+>       PathVariable pathVar = (PathVariable) paramAnn;
+>       pathVarName = pathVar.value();
+>       annotationsFound++;
+>    }
+>    else if (ModelAttribute.class.isInstance(paramAnn)) {
+>       ModelAttribute attr = (ModelAttribute) paramAnn;
+>       attrName = attr.value();
+>       annotationsFound++;
+>    }
+>    else if (Value.class.isInstance(paramAnn)) {
+>       defaultValue = ((Value) paramAnn).value();
+>    }
+>    else if (paramAnn.annotationType().getSimpleName().startsWith("Valid")) {
+>       validate = true;
+>       Object value = AnnotationUtils.getValue(paramAnn);
+>       validationHints = (value instanceof Object[] ? (Object[]) value : new Object[] {value});
+>    }
+> }
+> 	
+>  //上诉注解只能标注一次
+> if (annotationsFound > 1) {
+>    throw new IllegalStateException("Handler parameter annotations are exclusive choices - " +
+>          "do not specify more than one such annotation on the same parameter: " + handlerMethod);
+> }
+>  
+> 	  //没有找到注解
+> if (annotationsFound == 0) {
+>     
+>     //解析是否是原生API
+>    Object argValue = resolveCommonArgument(methodParam, webRequest);
+>     
+>    if (argValue != WebArgumentResolver.UNRESOLVED) {
+>       args[i] = argValue;
+>    }
+>    else if (defaultValue != null) {
+>       args[i] = resolveDefaultValue(defaultValue);
+>    }
+>    else {
+>       Class<?> paramType = methodParam.getParameterType();
+>       if (Model.class.isAssignableFrom(paramType) || Map.class.isAssignableFrom(paramType)) {
+>          if (!paramType.isAssignableFrom(implicitModel.getClass())) {
+>             throw new IllegalStateException("Argument [" + paramType.getSimpleName() + "] is of type " +
+>                   "Model or Map but is not assignable from the actual model. You may need to switch " +
+>                   "newer MVC infrastructure classes to use this argument.");
+>          }
+>           //直接赋值给这个参数
+>          args[i] = implicitModel;
+>       }
+>       else if (SessionStatus.class.isAssignableFrom(paramType)) {
+>          args[i] = this.sessionStatus;
+>       }
+>       else if (HttpEntity.class.isAssignableFrom(paramType)) {
+>          args[i] = resolveHttpEntityRequest(methodParam, webRequest);
+>       }
+>       else if (Errors.class.isAssignableFrom(paramType)) {
+>          throw new IllegalStateException("Errors/BindingResult argument declared " +
+>                "without preceding model attribute. Check your handler method signature!");
+>       }
+>       else if (BeanUtils.isSimpleProperty(paramType)) {
+>          paramName = "";
+>       }
+>       else {
+>          attrName = "";
+>       }
+>    }
+> }
+> 
+> if (paramName != null) {
+>    args[i] = resolveRequestParam(paramName, required, defaultValue, methodParam, webRequest, handler);
+> }
+> else if (headerName != null) {
+>    args[i] = resolveRequestHeader(headerName, required, defaultValue, methodParam, webRequest, handler);
+> }
+> else if (requestBodyFound) {
+>    args[i] = resolveRequestBody(methodParam, webRequest, handler);
+> }
+> else if (cookieName != null) {
+>    args[i] = resolveCookieValue(cookieName, required, defaultValue, methodParam, webRequest, handler);
+> }
+> else if (pathVarName != null) {
+>    args[i] = resolvePathVariable(pathVarName, methodParam, webRequest, handler);
+> }
+>     //确定自定义参数值的赋值
+> else if (attrName != null) {
+>     
+>    WebDataBinder binder =
+>          resolveModelAttribute(attrName, methodParam, implicitModel, webRequest, handler);
+>    boolean assignBindingResult = (args.length > i + 1 && Errors.class.isAssignableFrom(paramTypes[i + 1]));
+>    if (binder.getTarget() != null) {
+>        
+>       doBind(binder, webRequest, validate, validationHints, !assignBindingResult);
+>    }
+>    args[i] = binder.getTarget();
+>    if (assignBindingResult) {
+>       args[i + 1] = binder.getBindingResult();
+>       i++;
+>    }
+>    implicitModel.putAll(binder.getBindingResult().getModel());
+> }
+> }
+> 
+> return args;
+> }
+> ```
+>
+> **进入resolveCommonArgument方法找到方法的参数**
+>
+> ```java
+> protected Object resolveCommonArgument(MethodParameter methodParameter, NativeWebRequest webRequest)
+> throws Exception {
+> 
+> // Invoke custom argument resolvers if present...
+> if (this.customArgumentResolvers != null) {
+> for (WebArgumentResolver argumentResolver : this.customArgumentResolvers) {
+>    Object value = argumentResolver.resolveArgument(methodParameter, webRequest);
+>    if (value != WebArgumentResolver.UNRESOLVED) {
+>       return value;
+>    }
+> }
+> }
+> 
+> // Resolution of standard parameter types...
+>  //获取方法参数类型
+> Class<?> paramType = methodParameter.getParameterType();
+> 
+> //解析标准参数（确定是否是原生API）
+> Object value = resolveStandardArgument(paramType, webRequest);
+> 
+> if (value != WebArgumentResolver.UNRESOLVED && !ClassUtils.isAssignableValue(paramType, value)) {
+> throw new IllegalStateException("Standard argument type [" + paramType.getName() +
+>       "] resolved to incompatible value of type [" + (value != null ? value.getClass() : null) +
+>       "]. Consider declaring the argument type in a less specific fashion.");
+> }
+> return value;
+> }
+> ```
+>
+> **进入resolveStandardArgument确定参数是否是原生的API**
+>
+> ```java
+> 
+> protected Object resolveStandardArgument(Class<?> parameterType, NativeWebRequest webRequest,
+>    Exception thrownException) throws Exception {
+> 
+> if (parameterType.isInstance(thrownException)) {
+>    return thrownException;
+> }
+> else if (WebRequest.class.isAssignableFrom(parameterType)) {
+>    return webRequest;
+> }
+> 
+> HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+> HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
+> 
+> if (ServletRequest.class.isAssignableFrom(parameterType)) {
+>    return request;
+> }
+> else if (ServletResponse.class.isAssignableFrom(parameterType)) {
+>    return response;
+> }
+> else if (HttpSession.class.isAssignableFrom(parameterType)) {
+>    return request.getSession();
+> }
+> else if (Principal.class.isAssignableFrom(parameterType)) {
+>    return request.getUserPrincipal();
+> }
+> else if (Locale.class.equals(parameterType)) {
+>    return RequestContextUtils.getLocale(request);
+> }
+> else if (InputStream.class.isAssignableFrom(parameterType)) {
+>    return request.getInputStream();
+> }
+> else if (Reader.class.isAssignableFrom(parameterType)) {
+>    return request.getReader();
+> }
+> else if (OutputStream.class.isAssignableFrom(parameterType)) {
+>    return response.getOutputStream();
+> }
+> else if (Writer.class.isAssignableFrom(parameterType)) {
+>    return response.getWriter();
+> }
+> else {
+>    return WebArgumentResolver.UNRESOLVED;
+> 
+> }
+> }
+> ```
+>
+
+**@ModelAttribute会在目标方法运行之前，将其方法的返回值也放到隐含模型中**
+
+#### SpringMVC确定pojo值的三步
+
+> ![image-20210411142958442](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210411142958442.png)
+>
+> **这里会产生两个效果：**
+>
+> > 如果给自定义类型标注了@modelAttribute注解的value就是这个attrName的值，
+> >
+> > 如果没有给自定义类型标注attrName= " "
+>
+> **步骤**
+>
+> > 1.如果隐含模型中有这个key（标注ModelAttribute注解就是指定的value，没标的就是首字母小写）指定的值赋值给bindObject
+> >
+> > 2.如果sessionattribute标注的属性，就从session中拿
+> >
+> > 3.如果都不是就是利用反射创建对象
+>
+> **参数赋值的源码**
+>
+> ```java
+> private WebDataBinder resolveModelAttribute(String attrName, MethodParameter methodParam,
+>       ExtendedModelMap implicitModel, NativeWebRequest webRequest, Object handler) throws Exception {
+> 
+>    // Bind request parameter onto object...
+>    String name = attrName;
+>    if ("".equals(name)) {
+>        //如果attrName是空串，就将参数类型的首字母小写作为值
+>       name = Conventions.getVariableNameForParameter(methodParam);
+>    }
+>    Class<?> paramType = methodParam.getParameterType();
+>    Object bindObject;
+>    if (implicitModel.containsKey(name)) {
+>       bindObject = implicitModel.get(name);
+>    }
+>    else if (this.methodResolver.isSessionAttribute(name, paramType)) {
+>       bindObject = this.sessionAttributeStore.retrieveAttribute(webRequest, name);
+>       if (bindObject == null) {
+>          raiseSessionRequiredException("Session attribute '" + name + "' required - not found in session");
+>       }
+>    }
+>    else {
+>       bindObject = BeanUtils.instantiateClass(paramType);
+>    }
+>    WebDataBinder binder = createBinder(webRequest, bindObject, name);
+>    initBinder(handler, name, binder, webRequest);
+>    return binder;
+> }
+> ```
+>
+> 
+
+**确定方法参数的每一个值**
+
+> **标注解：** 保存注解信息；最终得到这个注解应该对应解析的值
+>
+> **没标注解：** 
+>
+> ​			一、先看是否是原生API
+>
+> ​			二、看是否是model或者Map
+>
+> ​			三、都不是，看是否是其他类型
+>
+> ​			四、给attrName赋值；
+>
+> ​						确定自定义类型参数：
+>
+> ​									一、attrName使用参数的类型首字母小写，或者使用 @modelAttribute（""） 的值	
+>
+> ​									二、看隐含模型中attrName对应的值，如果有就从隐含模型中赋值
+>
+> ​									三、看是否是sessionAttribute标注的属性，如果是就从session中拿，拿不到就抛异常
+>
+> ​									四、不是session中的就创建一个新的对象
+>
+> ​			五、拿到创建好的对象，进行传入数据（createBinder（））

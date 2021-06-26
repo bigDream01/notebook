@@ -1,0 +1,55 @@
+
+
+**事件**
+
+> 用户和浏览器的交互行为
+
+**静态注册**
+
+> ![image-20210131225949621](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210131225949621.png)
+
+**动态注册**
+
+> ![image-20210131230008959](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210131230008959.png)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript">
+
+        //静态绑定事件
+        function fun() {
+            alert("静态绑定事件");
+        }
+
+
+        //动态绑定事件
+        //文档加载完成之后调用
+        window.onload = function () {
+
+            //1.获取标签的对象
+            var btn = document.getElementById("onClick");
+            //2.调用事件，并定义事件之后的执行事务
+            btn.onclick = function () {
+                alert("动态绑定事件");
+            }
+        }
+
+
+    </script>
+</head>
+
+<body>
+
+   <!--  在静态绑定中，对于绑定的事件要按照该绑定事件的标签属性进行调用-->
+    <button onclick="fun()">按钮1</button>
+<!--  在动态绑定中，只需要对于标签的获取对象属性进行定义-->
+    <button id="onClick">按钮2</button>
+</body>
+</html>
+```
+
+ 

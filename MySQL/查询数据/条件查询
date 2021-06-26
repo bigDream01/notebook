@@ -1,0 +1,116 @@
+## 条件查询：
+
+**语法格式：**
+
+> select
+>
+> from
+>
+> where（条件）
+
+**执行顺序：**
+
+> ① from
+>           ② where
+>           ③ select
+
+**主要分为两种判断方式：**
+
+```sql
+  关系表达式： <   >   <=  >=  =（表示等于）  <>(表示不等于)
+  逻辑表达式： and(&&) or(||) not(!)
+  模糊表达式：like in between 
+```
+
+**关系表达式案例**
+
+```sql
+#查询出工资大于10000的员工与其工资
+SELECT 
+  `first_name,`
+  `salary` 
+FROM
+  `employees` 
+WHERE salary > 10000;
+```
+
+### 模糊查询
+
+1. #### **like查询**
+
+**功能：**
+
+> 一般与通配符搭配使用，对字符串数据进行部分匹配查询
+
+**常见的通配符：**
+
+> _ :表示单个字符
+>
+> % :表示多个字符( 0 -  100)
+
+**查询名第三个字符为 "a"的员工信息**
+
+```sql
+SELECT *
+FROM employees
+WHERE first_name LIKE '__a%';
+```
+
+**查询名第二个字符为 "_"的员工信息**
+
+```sql 
+SELECT *
+FROM employees
+WHERE last_name LIKE '_$_%' ESCAPE '$';
+```
+
+### 2.in 查询
+
+**功能：**
+
+>  判断一段数据，是否存在于指定的列表中（全部元素整个匹配存在于str中）
+>
+> a in（str1， str2，str3，str4。。。。）
+>
+>  in \ not in 
+
+**案例查询部门编号是30 \60的员工信息**
+
+```sql 
+SELECT last_name,first_name
+FROM employees
+WHERE department_id IN (30,60);
+```
+
+#### **3.between and**
+
+**功能：**
+
+>  查询数据是否存在一个范围内
+>
+> a between c and d  （c - d）*/
+
+**#案例查询工资存在于3000到5000之间的员工信息**
+
+```sql
+SELECT *
+FROM employees
+WHERE salary BETWEEN 3000 AND 5000;
+```
+
+#### 4.is null/is not null
+
+**功能**
+
+>  查询数据是否为null
+>
+> a is null；
+
+**案例查询没有奖金的员工名字**
+
+```sql
+SELECT last_name,first_name
+FROM employees 
+WHERE `commission_pct` IS NOT NULL;
+```
+

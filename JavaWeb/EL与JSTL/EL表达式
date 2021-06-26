@@ -1,0 +1,129 @@
+### **通过页面化对象来实现对实例的访问**
+
+```jsp
+<%
+    Person person = new Person();
+    person.setName("haer");
+
+    person.setPhones(new String[]{"15310928984","15310475424"});
+
+    List<String> list = new ArrayList<>();
+    list.add("北京");
+    list.add("上海");
+    list.add("深圳");
+    person.setCities(list);
+
+    Map<String,Object> map = new HashMap<>();
+    map.put("重庆","大学城");
+    person.setMap(map);
+
+    pageContext.setAttribute("person",person);
+%>
+
+${person}
+```
+
+
+
+**获取对象内的数据**
+
+> ```xml
+> <%--获取属性--%>
+> ${person.name}
+> <%--u获取数组内的数据--%>
+> ${person.phones[0]}
+> <%--获取集合里的数据--%>
+> ${person.cities[0]}
+> <%--获取map里的数据--%>
+> ${person.map.重庆}
+> ```
+>
+> **在对对象进行访问的时候把通过域对象获取到的对象当成对象就可以了。**
+
+### jsp 四大域对象
+
+**四个域对象分别是：**域对象是可以像Map 一样存取数据的对象。四个域对象功能一样。不同的是它们对数据的存取范围。**
+
+> pageContext 		(PageContextImpl 类) 		当前jsp 页面范围内有效
+> 		request 		(HttpServletRequest 类)、	一次请求内有效
+> 		session 		(HttpSession 类)、		一个会话范围内有效（打开浏览器访问服务器，直到关闭浏览器）
+> 		application 		(ServletContext 类)		 整个web 工程范围内都有效（只要web 工程不停止，数据都在）
+
+**四个域在使用的时候，优先顺序分别是，他们从小到大的范围的顺序。**
+
+> pageContext ====>>> request ====>>> session ====>>> application 
+
+### EL表达式运算
+
+> 与javase的无异
+
+#### **empty 运算**
+
+**以下几种情况为空：**
+
+> 1、值为null 值的时候，为空
+> 		2、值为空串的时候，为空
+> 		3、值是Object 类型数组，长度为零的时候
+> 		4、list 集合，元素个数为零
+> 		5、map 集合，元素个数为零
+
+####  . 运算与 [ ] 运算
+
+> 通过域对象获取值的时候，可以通过   " . "来获取
+>
+> 但当获取的key中存在 " . "的时候就会产生歧义，这个时候使用
+>
+> [ "key "] 来获取对象就不会产生歧义
+
+### EL表达式的11个隐含对象
+
+![image-20201122154629519](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20201122154629519.png)
+
+### pageContext对象
+
+```jsp
+	<body>
+<%--
+    
+    request.getScheme() 它可以获取请求的协议
+    request.getServerName() 获取请求的服务器ip 或域名
+    request.getServerPort() 获取请求的服务器端口号
+    getContextPath() 获取当前工程路径
+    request.getMethod() 获取请求的方式（GET 或POST）
+    request.getRemoteHost() 获取客户端的ip 地址
+    session.getId() 获取会话的唯一标识
+    
+    --%>
+        
+    <%
+        
+    pageContext.setAttribute("req", request);
+        
+    %>
+        
+    <%=request.getScheme() %> <br>
+        
+    1.协议： ${ req.scheme }<br>
+    2.服务器ip：${ pageContext.request.serverName }<br>
+    3.服务器端口：${ pageContext.request.serverPort }<br>
+    4.获取工程路径：${ pageContext.request.contextPath }<br>
+    5.获取请求方法：${ pageContext.request.method }<br>
+    6.获取客户端ip 地址：${ pageContext.request.remoteHost }<br>
+    7.获取会话的id 编号：${ pageContext.session.id }<br>
+        
+</body>
+```
+
+> 因为这里的获取是获取的类会直接去调用get方法所以直接获取类就可以获取值
+
+#### scope对象
+
+> ![image-20201122160645015](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20201122160645015.png)
+
+**sessionScope**
+
+> 获取session对象，对session对象内的数据进行调用其 “ . ”,后面跟的是域对象的       . key可以得到对象。然后再对对象进行方法和属性的调用
+>
+> ```java
+> sessionScope.cart.items
+> ```

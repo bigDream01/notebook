@@ -1,0 +1,403 @@
+> ### **①属性赋值**
+>
+> ```xml
+> <!--    注册组件-->
+> 
+> <!--
+>   bean    标签可以注册一个组件（对象、类）
+>   id      表示组件的唯一标识
+>   class   表示该类需要实例化对象类的地址
+> -->
+>  <bean  id="person01" class="com.atguigu.bean.person">
+> 
+> <!--
+>       property  表示需要实例化的对象的属性
+>       name      来确定属性名
+>       value     赋予属性值
+> -->
+> 
+>       <property name="name" value="张三"></property>
+>       <property name="age" value="19"></property>
+>       <property name="email" value="zhangsan@qq.com"></property>
+> 
+>  </bean>
+> <bean id="person03" class="com.atguigu.bean.person">
+> 
+> ```
+>
+> **②调用有参构造器进行赋值**
+>
+> ```xml
+> <bean id="person03" class="com.atguigu.bean.person">
+> <!--          调用有参构造器赋值-->
+>         <constructor-arg name="age" value="19"></constructor-arg>
+>         <constructor-arg name="name" value="小明"></constructor-arg>
+>         <constructor-arg name="email" value="xiaoming@qq.com"></constructor-arg>
+> 
+>     </bean>
+> ```
+>
+> **③p名称空间**
+>
+> ```xml
+> //第一步
+> xmlns:p="http://www.springframework.org/schema/p"
+> //第二步
+> 直接调用p:属性名就可以
+> ```
+>
+> **④外引用和null值的设定**
+>
+> ```xml
+> <bean id="person01" class="com.atguigu.bean.Person">
+> 
+>  <property name="name" value="小明"></property>
+> 
+>  <!--        null值的赋值-->
+>  <property name="email">
+>      <null></null>
+>  </property>
+> 
+>  <property name="car" ref="car01">
+>  </property>
+> </bean>
+> 
+> 
+> <bean id="car01" class="com.atguigu.bean.Car">
+>  <property name="name" value="奔驰"></property>
+>  <property name="price" value="10000"></property>
+> </bean>
+> ```
+>
+> > 在外引用中调用的属性值与其他的类调用的引用的时候是同一个，不可随意更改属性
+>
+> **⑤内引用**
+>
+> > 直接外引用搬入其property中就可以了，但是不可以被引用
+>
+> **⑥list和map赋值**
+>
+> ```xml
+>  <!--        给list属性赋值-->
+>         <property name="books">
+>             <!--相当于 books = new arrayList()-->
+>             <list>
+>                 <bean class="com.atguigu.bean.Book" p:name="小心" p:author="大学"></bean>
+>                 <!--                外部引用-->
+>                 <ref bean="book01"></ref>
+>             </list>
+>         </property>
+> 
+>         <!--        给map赋值-->
+>         <property name="map">
+>             <map>
+>                 <entry key="key1" value="value1"></entry>
+>                 <entry key="key2" value-ref="book01"></entry>
+>             </map>
+>         </property>   
+> 
+> <!--    book的创建-->
+>     <bean id="book01" class="com.atguigu.bean.Book">
+>         <property name="name" value="大学"></property>
+>         <property name="author" value="老子"></property>
+>     </bean>
+> ```
+>
+> **⑦properties赋值**
+>
+> ![image-20210307164532945](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210307164532945.png)
+>
+> **⑧util标签来解耦单个集合，让集合能够复用，其都是引用一个地址，修改数据其他的也会跟着被修改**
+>
+> ![image-20210307165418019](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210307165418019.png)
+>
+> **⑨在bean标签中parent标签，继承上个bean文件**
+>
+> **⑩bean的作用域**
+>
+> > **singleton:单实例；默认的**
+> >
+> > > ①在创建容器的时候，直接就创建实例
+> > >
+> > > ②再次获取实例的时候，其获取到的实例与之前获取到的是同一个
+> >
+> > **prototype:多实例**
+> >
+> > > ①在创建容器的时候没有创建实例，在获取实例的时候会创建实例
+> > >
+> > > ②再次获取实例的时候，会再次创建一个实例，跟之前实例不一致
+> >
+> > ![image-20210308125056990](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210308125056990.png)
+
+**工厂创建实例**
+
+> **静态工厂创建实例**
+>
+> > 就是在类上直接调用静态方法进行创造对象
+>
+> ```xml
+> <!--    静态工厂创建实例-->
+> <!--     相当于  实例 =  工厂类.方法（参数）-->
+> 
+> <bean id="airPlane01" class="com.atguigu.factory.AirPlaneStaticFactory" factory-method="getAirPlane">
+>     <constructor-arg value="牛逼"></constructor-arg>
+> </bean>
+> ```
+
+> **动态工厂创建实例**
+>
+> > 需要先创建一个工厂类的对象然后再在类的方法中进行创建对象
+>
+> ```xml
+>     <!--     动态工厂创建实例-->
+> 
+> <!--    ①相当于创建一个实例工厂
+>           工厂类 工厂名 = new 工厂类（）
+> 
+> -->
+>     <bean id="AirPlaneInstanceFactory" class="com.atguigu.factory.AirPlaneInstanceFactory"></bean>
+> 
+> <!--  factory-bean
+>         工厂名.方法（）；
+> 
+>          factory-method：表示需要调用的方法
+>          factory-bean：表示需要的工厂实现类
+>          constructor-arg ：可以在方法中进行传参
+>  -->
+>     <bean id="airPlane02" class="com.atguigu.bean.AirPlane" factory-bean="AirPlaneInstanceFactory"
+>         factory-method="getAirPlane">
+>         <constructor-arg value="牛逼。。。"></constructor-arg>
+>     </bean>
+> ```
+>
+> **factorybean创建实例**
+>
+> > **步骤**
+> >
+> > > 首先需要实现 FactoryBean<AirPlane>接口
+> > >
+> > > 然后在各个方法中设置值
+>
+> ```java
+> public class AirPlaneFactoryBean implements FactoryBean<AirPlane> {
+> 
+>     //返回对象
+>     @Override
+>     public AirPlane getObject() throws Exception {
+> 
+>         AirPlane airPlane = new AirPlane();
+>         airPlane.setAirName("屌爆了");
+>         airPlane.setCaptainName("冲天炮");
+>         return airPlane;
+>     }
+> 
+>     //返回实例的类型
+>     @Override
+>     public Class<?> getObjectType() {
+>         AirPlane airPlane = new AirPlane();
+>         return airPlane.getClass();
+>     }
+> 
+>     //设置返回的对象是否是单例的
+>     @Override
+>     public boolean isSingleton() {
+>         return false;
+>     }
+> }
+> ```
+>
+> **注意事项**
+>
+> > ①其创建的过程中，不是直接就进行创建的。类似于多例，是在获取的时候进行创建获取的。
+> >
+> > ②在设置为单例上后，在创建上也是在获取的时候进行创建的
+> >
+> > ③ 其是Spring内部的接口，所以在配置文件的时候，不需要对工厂类进行设计
+
+**bean标签中对外部文件的读取（数据库连接池技术）** 
+
+> > **context:property-placeholder** :对外部配置文件进行读取
+> >
+> > **location="classpath:dbconfig.properties**:对于类路径下的读取
+> >
+> > **${jdbc.username}**：读取方式跟以前一样
+> >
+> > **注意点：**
+> >
+> > > 在spring中配置账户名不能用username，username在spring是一个关键字
+>
+> ```xml
+> <--context:property-placeholder  获取外部配置文件-->
+> 
+>     <context:property-placeholder location="classpath:dbconfig.properties"></context:property-placeholder>
+>     <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+>         <property name="user" value="${jdbc.username}"></property>
+>         <property name="password" value="${jdbc.password}"></property>
+>         <property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+>         <property name="driverClass" value="${jdbc.driverClass}"></property>
+>     </bean>
+> ```
+>
+> ```xml
+> jdbc.username=root
+> jdbc.password=1999826wwb
+> jdbc.jdbcUrl=jdbc:mysql://localhost:3306/girls
+> jdbc.driverClass=com.mysql.jdbc.Driver
+> ```
+
+**通过注解配置文件**
+
+> **①普通组件：@Component**
+>
+> >  标识一个受Spring IOC容器管理的组件
+>
+> **②持久化层组件：@Respository**
+>
+> >  标识一个受Spring IOC容器管理的持久化层组件
+>
+> **③业务逻辑层组件：@Service**
+>
+> >  标识一个受Spring IOC容器管理的业务逻辑层组件
+>
+> **④表述层控制器组件：@Controller**
+>
+> >  标识一个受Spring IOC容器管理的表述层控制器组件
+>
+> **⑤组件命名规则**
+>
+> >  [1]默认情况：使用组件的简单类名首字母小写后得到的字符串作为bean的id
+> >
+> > [2]使用组件注解的value属性指定bean的id
+>
+> **配置文件书写方式**
+>
+> **操作流程**
+> 
+> > ①将组件上配置上注解
+>>
+> > ②在xml配置文件中配置，配置文件
+>>
+> > ```xml
+> > //配置文件的书写方式
+> > <context:component-scan base-package="com.atguigu.note"></context:component-scan>
+> > ```
+> >
+> > ③ 导入AOP包
+> 
+> **注意：**
+> 
+> > 在默认情况下，其为**单实例的**。可以在**注解中改变其作用范围**
+>>
+> > 使用组件的简单类名首字**母小写后得到的字符串作为bean的id**，可以使用组件注解的value属性指定bean的id
+
+**@Autowired配置自动注入**
+
+> **原理**
+>
+> > 首先是先按照类型去容器中找到对应的组件：bookService = ioc.getBean(类型）
+> >
+> > > 找到一个：直接赋值
+> > >
+> > > 没找到：报异常
+> > >
+> > > 找到多个：
+> > >
+> > > > 按照id进行查找（默认变量名首字母小写）
+> > > >
+> > > > 没有匹配上继续报错
+>
+> **书写方法**
+>
+> > 需要先在配置文件中创建一个ioc容器，然后调用
+> >
+> > ```xml
+> > <context:component-scan base-package="com.atguigu"></context:component-scan>
+> > ```
+> >
+> > 对文件进行扫描
+> >
+> > 之后其就会自动调用了；
+>
+> **两个标签**
+>
+> > @Qualifier（“”）可以指定id：可以修改属性的id值，默认值为类名首字母小写
+> >
+> > @Autowired(required = false) : 
+> >
+> > > 默认为true，在找不到的情况下直接报异常
+> > >
+> > > false : 表示在找不到的情况下，给赋予null值
+
+**泛型依赖注入**
+
+> **原理**
+>
+> > 本质上就是通过泛型的识别，来判断需要调用哪个Dao，底层上主要是
+> >
+> > ```java
+> > bookService.getClass().getGenericSuperclass()
+> > ```
+> >
+> > 来获取到该泛型，再进行判断。（jdk提供）
+>
+> ![image-20210316141951629](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210316141951629.png)
+>
+> **实现**
+>
+> > **DAO层**
+>
+> ```java
+> @Repository
+> public abstract class BaseDao <T>{
+>     public abstract void save();
+> }
+> ```
+>
+> ```java
+> @Repository
+> public class BookDao extends BaseDao<Book> {
+> 
+>     @Override
+>     public void save() {
+>         System.out.println("save a book");
+>     }
+> }
+> ```
+>
+> ```java
+> @Repository
+> public class UserDao extends BaseDao<User> {
+>     @Override
+>     public void save() {
+>         System.out.println("save a user");
+>     }
+> }
+> ```
+>
+> > **service层**
+>
+> ```java
+> public class BaseService<T> {
+> 
+>     @Autowired
+>     BaseDao <T>baseDao;
+> 
+>     public void save(){
+>         baseDao.save();
+>     }
+> 
+> }
+> ```
+>
+> ```java
+> @Service
+> public class BookService extends BaseService<Book>{
+> }
+> ```
+>
+> ```java
+> @Service
+> public class UserService extends BaseService<User> {
+> }
+> ```
+

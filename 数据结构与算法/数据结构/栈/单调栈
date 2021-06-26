@@ -1,0 +1,33 @@
+**含义**
+
+> 主要是维护一个单调的栈，栈内的数字不一定是需要排序的数字。可能是这些数字的坐标，但是单调的依据是坐标对应的数字。这样的好处就是不需要对原数组进排序就进行了比较。应用的主要领域主要是在题中给的数据不是有序的，但是得到的结果是需要在一定区间上有序的。
+
+**例题**
+
+![image-20210414223800973](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210414223800973.png)
+
+**题解**
+
+> 由于在栈上维护了一个单调的数。其要求是记录局部的单调性质。
+>
+> 当数组取出的元素比栈顶的元素大时，其相差的天数就是 （i  - 栈顶的元素）。
+
+```java
+public int[] dailyTemperatures(int[] T) {
+    Stack stack = new Stack();
+    int []ans = new int[T.length];
+    for(int i = 0; i < T.length; i++){
+        while(!stack.empty()){
+            int temp = (int)stack.peek();
+            if(T[i] <= T[temp]){
+                break;
+            }
+            stack.pop();
+            ans[temp] = i - temp;
+
+        }
+        stack.push(i);
+    }
+    return ans;
+}
+```

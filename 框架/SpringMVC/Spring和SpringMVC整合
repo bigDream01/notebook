@@ -1,0 +1,35 @@
+## Spring和SpringMVC整合
+
+#### 整合方案
+
+> 创建两个容器，Spring和SpringMVC各一个，其容器不能冲突。不然在事务控制上就会存在冲突。
+>
+> 所以就让他们扫描不同的组件，从而达到事务控制的目的
+
+**SpringMVC的xml配置**
+
+> ```xml
+> <context:component-scan base-package="com.atguigu" use-default-filters="false">
+>     <context:include-filter type="annotation"
+>                             expression="org.springframework.stereotype.Controller"/>
+>     <context:include-filter type="annotation"
+>                             expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+> </context:component-scan>
+> ```
+
+**spring的xml配置**
+
+> ```xml
+> <context:component-scan base-package="com.atguigu.springmvc">
+>     <context:exclude-filter type="annotation"
+>                             expression="org.springframework.stereotype.Controller"/>
+>     <context:exclude-filter type="annotation"
+>                             expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+> </context:component-scan>
+> ```
+
+#### 存在的问题
+
+> 在Spring中，创建两个容器的时候。是以spring的容器为父类容器的，所以在Spring和SpringMVC的整合中，Spring是不能调用SpringMVC容器中的组件的。
+
+![image-20210418160818355](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210418160818355.png)

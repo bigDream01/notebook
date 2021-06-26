@@ -1,0 +1,73 @@
+```java
+public void quicksort(int[] arr, int left, int right) {
+
+    int l = left;
+    int r = right;
+    int temp = 0;
+    int mid = arr[(l + r) / 2];
+
+    //将mid两边的分开
+    while (r > l) {
+        //选出左边比mid大的
+        while (arr[l] < mid) {
+
+            l++;
+        }
+        //选出右边比mid小的
+        while (arr[r] > mid) {
+
+            r--;
+        }
+
+        if (l >= r) {
+            break;
+        }
+        //交换arr[l] 和 arr[r]
+        temp = arr[l];
+        arr[l] = arr[r];
+        arr[r] = temp;
+
+        if (arr[l] == mid) {
+            r--;
+        }
+
+        if (arr[r] == mid) {
+            l++;
+        }
+
+    }
+
+    //避免栈溢出(递归的时候)
+    if (l == r) {
+        l += 1;
+        r -= 1;
+    }
+
+    //右递归
+    if (r > left) {       //if (递归结束条件)
+        quicksort(arr, left, r);
+    }
+    //左递归
+    if (right > l) {
+        quicksort(arr, l, right);
+    }
+
+}
+```
+
+**实现思路**
+
+> 主要是对递归的应用
+>
+> ​	其是先选出一个中间值然后在两边进行比较，
+>
+> > 大的放到右边
+> >
+> > 小的放到左边
+>
+> 然后进行递归，进行左递归和右递归
+>
+> 递归基是
+>
+> ![image-20201108231555593](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20201108231555593.png)
+

@@ -1,0 +1,38 @@
+```java
+/*
+ *
+ *
+ *
+ *@description:
+ *
+ //spring的单元测试
+
+     * 1、导入test包：spring-test-4.0.0.RELEASE.jar
+     * 2、@ContextConfiguration(locations = "classpath:ioc.xml")来指定spring的配置文件的位置
+     * 3、@RunWith(SpringJUnit4ClassRunner.class)指定用那个驱动进行单元测试，默认是junit；
+     *             使用spring的单元模块是使用spring的单元测试进行的；
+
+
+ *@author：bigDream
+ *@date：2021-03-15 14:41
+ **/
+@ContextConfiguration(locations = "classpath:ioc.xml")
+@RunWith(SpringJUnit4ClassRunner.class)
+public class IOCtest {
+
+    ApplicationContext ioc = new ClassPathXmlApplicationContext("ioc.xml");
+
+
+    public void test(){
+
+        BookServlet bookServlet = (BookServlet) ioc.getBean("bookServlet");
+
+        bookServlet.saveBook();
+    }
+
+	//因为使用的是spring的注入方式，就不需要去自己创建对象了
+    BookServlet bookServlet;
+
+
+}
+```

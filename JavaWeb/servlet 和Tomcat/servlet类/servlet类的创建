@@ -1,0 +1,37 @@
+### 步骤：
+
+> 一、 创建一个继承HttpServlet类
+>
+> 二、根据业务需要重写该类的方法
+>
+> 三、到web.xml中的配置servlet文件信息（访问地址）
+
+### **继承**HttpServlet类
+
+```java
+public class helloServlet1 extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("dopost请求");
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("doget 请求");
+    }
+}
+```
+
+### 配置文件信息
+
+```xml
+<servlet>
+    <servlet-name>helloServlet1</servlet-name>
+    <servlet-class>Servlethello.helloServlet1</servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>helloServlet1</servlet-name>
+    <url-pattern>/hello1</url-pattern>
+
+</servlet-mapping>
+```
+

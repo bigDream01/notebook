@@ -1,0 +1,87 @@
+### @Configuration
+
+> 一、给容器中添加组件
+>
+> 二、proxyBeanMethods 是管理创建实例的方式的，默认值为true，其为单实例创建。当proxyBeanMethods为false的是时候，其创建的实例是多实例的。
+>
+> > 其**可以解决组件依赖问题**
+> >
+> > > 组件依赖就是在组件的使用中其组件与组件存在级联关系
+> >
+> > **使用规则**
+> >
+> > > full模式：如果组件与组件之间存在级联关系我们一般是将其设置为true，这样就可以保障其获取的级联属性是同一个
+> > >
+> > > lite模式：如果不是就设置为false，这样我们的项目启动会比较快
+>
+> 三、配置类本身也是组件
+
+```java
+@Configuration(proxyBeanMethods = true)
+public class MyConfig {
+	
+    @Bean()
+    //括号中可以自定义获取组件的key
+    public User user(){
+        return new User("张三");
+    }
+
+}
+```
+
+### @conditional
+
+> 组件条件装配注解，对于组件的创建进行判断。
+
+![image-20210505145649050](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210505145649050.png)
+
+### @importResource
+
+> 可以导入原生的xml配置文件读取到容器中，直接在类上使用，并标注文件路径就是
+
+### lombok
+
+> 就是简化bean配置类的书写，使用注解代替。其是在编译时对bean进行编译的。
+>
+> **注意点**
+>
+> > **组件的属性中存在级联属性的时候**，在构造器的书写上不能使用注解。因为这个是编译时的行为，是无法识别的。**需要手动书写**
+
+```xml
+<!--        lombok插件配置-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.20</version>
+            <scope>provided</scope>
+        </dependency>
+```
+
+```java
+@Data	//get set 方法
+@ToString	//toString方法
+@NoArgsConstructor	//无参构造器
+@AllArgsConstructor 	//有参构造器
+@EqualsAndHashCode	//equals和hashcode书写
+```
+
+### dev---tool
+
+> 将项目的运行，不用点击start按键，快捷键 Ctrl + F9
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <optional>true</optional>
+</dependency>
+```
+
+### **从容器中获取组件**
+
+```java
+ConfigurableApplicationContext run = SpringApplication.run(MainApplication.class, args);
+
+User user = (User) run.getBean("user01");
+System.out.println(user);
+```

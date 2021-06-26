@@ -1,0 +1,23 @@
+## Map接口结构
+
+特点：存储key ---- value一对数据类型的数据
+
+### HashMap 
+
+> map的主要是实现类，线程不安全，效率高，可以存储Null的key----value
+
+###             LinkedHashMap： HashMap 的子类
+
+> 主要用于存储需要频繁遍历的数据，其主要存储是运用一个双向链表的方式存储数据的
+
+### HashTree
+
+> 用于存储进行排序的Key---value数据，其排序规则主要是依据Key的自然排序或定制排序进行排序。（需要时重写comparaTo或compartor方法）
+
+### HashTable
+
+>map的古老实现类，线程安全，效率低，不可以存储Null的key----value
+
+**Properties**
+
+> 主要是用于存储一些配置文件。Key-----Value都是String类型的。

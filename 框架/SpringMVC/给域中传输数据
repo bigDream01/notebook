@@ -1,0 +1,92 @@
+### 域中传输数据
+
+> 给浏览器传输数据主要是通过requst进行传输的，在MVC中主要是也是提供requst的实现方式
+
+#### requst域实现
+
+**modelview实现接口**
+
+> > 方法返回值返回给浏览器，存储在requst域中
+>
+> 在本质上其底层是通过map接口来实现的
+>
+> ```java
+> @RequestMapping("/hello")
+> public ModelAndView ModelAndViewTest() {
+> 
+>  System.out.println("ModelAndViewTest..........");
+>  //请求转发的地址采用的是拼串，在创建的过程中可以直接初始化
+>  //域数据是requst中
+> 
+>  ModelAndView modelAndView = new ModelAndView("success");
+>  modelAndView.addObject("key","value");
+> 
+>  return modelAndView;
+> }
+> ```
+
+**map，modelMap，model实现**
+
+> > 往域中存储数据
+>
+> 其在底层上都是org.springframework.validation.support.**BindingAwareModelMap**
+>
+> 这个类实现的，考虑到框架的移植问题，推荐使用**Map**
+>
+> ```java
+> @RequestMapping("/model")
+> public String MapAndModelTest(Map<String,Object> map, Model model, ModelMap modelMap) {
+> 
+>  System.out.println("MapAndModelTest.............");
+>  model.addAttribute("model","model");
+>  modelMap.addAttribute("modelMap","modelMap");
+>  map.put("map","map");
+> 
+>  return "success";
+> }
+> ```
+>
+> **源码**
+>
+> ```java
+> public class BindingAwareModelMap extends ExtendedModelMap {
+> 
+> @Override
+> public Object put(String key, Object value) {
+>    removeBindingResultIfNecessary(key, value);
+>    return super.put(key, value);
+> }
+> 
+> @Override
+> public void putAll(Map<? extends String, ?> map) {
+>    for (Map.Entry<? extends String, ?> entry : map.entrySet()) {
+>       removeBindingResultIfNecessary(entry.getKey(), entry.getValue());
+>    }
+>    super.putAll(map);
+> }
+> 
+> private void removeBindingResultIfNecessary(Object key, Object value) {
+>    if (key instanceof String) {
+>       String attributeName = (String) key;
+>       if (!attributeName.startsWith(BindingResult.MODEL_KEY_PREFIX)) {
+>          String bindingResultKey = BindingResult.MODEL_KEY_PREFIX + attributeName;
+>          BindingResult bindingResult = (BindingResult) get(bindingResultKey);
+>          if (bindingResult != null && bindingResult.getTarget() != value) {
+>             remove(bindingResultKey);
+>          }
+>       }
+>    }
+> }
+> 
+> }
+> ```
+
+#### session域的数据传输
+
+> 不推荐使用SpringMVC提供的接口，一般使用原生接口
+>
+> ![image-20210330202738084](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210330202738084.png)
+>
+> ![image-20210330202800156](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210330202800156.png)
+>
+> ![image-20210330202815460](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210330202815460.png)

@@ -1,0 +1,118 @@
+### collection的方法介绍
+
+注意点：在向collection中添加数据时候，要对数据类的toString方法进行重写，不然其调用的别为父类的toString方法，一般不合适。
+
+**add（object e）**：添加元素
+
+```java
+//添加元素add(object e）。注意 ：因为其为有序的那么其添加顺序不一样，那么两个对象是不一样的（ArrayList（））
+collection.add(22);//自动装箱
+collection.add("哈儿");
+collection.add("hello");
+collection.add(33);
+collection.add(44);
+```
+
+**addAll（object e）**：向此对象添加一个对象的全部元素
+
+**size（）**：返回此对象的全部元素个数
+
+**isEmpty（）**：判断是否存在元素（判断size是否为0）
+
+**clear（）：**清空元素
+
+**contaions（object e）：** 判断在当前对象中是否存在此元素（记得重写equals（））
+
+```java
+//contaions():判断在当前对象中是否存在此元素contains（元素）其比较是运用equals()要对方法进行重写，
+// 不然其调用的是object中的equals()，会返回false
+System.out.println(collection.contains(new String("hello")));
+```
+
+**contaionsAll（object e）：**判断对象中的所有元素是否都存在于此对象中
+
+```java
+
+
+        collection.add(22);//自动装箱
+        collection.add("哈儿");
+        collection.add("hello");
+        collection.add(33);
+        collection.add(44);
+
+        collection1.add("哈儿");
+        collection1.add("hello");
+
+ System.out.println(collection.containsAll(collection1));
+```
+
+**remove（object e）：**移除此对象中与o中相同的元素
+
+```java
+collection.removeAll(collection1);
+System.out.println(collection);
+```
+
+**removeAll（collection1 o）：**移除此对象中与o中相同的元素
+
+```java
+collection.removeAll(collection1);
+```
+
+**retainAll（collection1 o）：**得到o对象与此对象共同持有的元素,修改当前对象的元素，即元素变为相同的元素
+
+```java
+//retainAll(collection1 o):得到o对象与此对象共同持有的元素,修改当前对象的元素，即元素变为相同的元素
+
+        Collection collection2 = new ArrayList(22);
+        collection.retainAll(collection2);
+```
+
+**hashCode()：**返回当前对象的hash值
+
+```java
+collection.hashCode()
+```
+
+**toArray（）**：集合----> 数组
+
+```java
+Object[] arr = collection.toArray();
+```
+
+拓展：数组------>集合:调用Arrays.asList(arr);
+
+```java
+List<Object> objects = Arrays.asList(arr);
+```
+
+注意:
+
+其返回值的类型里面其认为是一个元素，包装类就可以识别为两个元素
+
+### Iterator（）：
+
+**一：Iterator 仅用于遍历集合，Iterator 本身并不提供承装对象的能力。**
+
+**二：如果需要创建Iterator 对象，则必须有一个被迭代的集合。集合对象每次调用iterator()方法都得到一个全新的迭代器对象，默认游标都在集合的第一个元素之前**。
+
+**iterator.hasNext()：**判断对象里面是否还存在元素
+
+**iterator.next()**： ①指针下移②将下一个元素的位置返回
+
+**演示实例**：
+
+```java
+Iterator iterator = collection.iterator();
+
+while(iterator.hasNext()){
+
+    System.out.println(iterator.next());
+}
+```
+
+**iterator.remove**:其删除的是对象中的next（）指向的那个元素
+
+一：Iterator可以删除集合的元素，但是是遍历过程中通过迭代器对象的remove方 法，不是集合对象的remove方法。 
+
+二：如果还未调用next()或在上一次调用 next 方法之后已经调用了 remove 方法，再调用remove都会报IllegalStateException。

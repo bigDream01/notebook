@@ -1,0 +1,25 @@
+其对象的定义实现
+
+> var 对象名  = {
+>
+> ​		属性名  :  值，
+>
+> ​		属性名1  : 值1,
+>
+> ​		fun : function (){
+>
+> ​		}
+>
+> }
+
+```javascript
+var object = {
+    name : "nice",
+    age : 18,
+    fun : function () {
+        alert(name);
+    }
+
+}
+```
+

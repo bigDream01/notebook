@@ -1,0 +1,139 @@
+### [897. 递增顺序搜索树 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/problems/increasing-order-search-tree/)
+
+> 主要是考察中序遍历以及对于树的遍历的理解，在对树的遍历中。可以思考使用**递归实现**。递归的原理就是一个一个遍历进去，然后再挨着挨着出来。出来的时候还是会运行下面的逻辑的。这样就实现了树的深度和广度遍历
+>
+> 在遍历树的时候，可以创建一个指针指向。这样可以方便之后的return。
+
+```java
+public TreeNode increasingBST(TreeNode root) {
+    List<Integer> temp = new ArrayList();
+    bfs(temp,root);
+
+    TreeNode firstNode = new TreeNode();
+    TreeNode currNode = firstNode;
+
+    for(Integer val : temp){
+        currNode.right = new TreeNode(val);
+        currNode = currNode.right;
+    }
+    return firstNode.right;
+}
+
+public void bfs(List<Integer> temp,TreeNode root){
+
+    if(root == null) {
+        return;
+    }
+
+    bfs(temp,root.left);
+    temp.add(root.val);
+    bfs(temp,root.right);
+
+}
+```
+
+
+
+### [22. 括号生成 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/problems/generate-parentheses/)
+
+> 回溯思想，简而言其实是一种递归思想。对整个数据进行暴力递归，之后再在递归结果上进行剪枝操作。
+>
+> 一般这种排列组合大多是采用暴力递归，要注意复习好树形结构的遍操作。
+
+```java
+public List<String> generateParenthesis(int n) {
+    List<String> res = new ArrayList();
+    String s = "";
+    dfs(n,0,0,res,s);
+
+    return res;
+}
+
+public void dfs(int n,int left,int right, List<String> res,String s){
+    if(left == n && right == n){
+        res.add(s);
+        return;
+    }
+
+    if(left < right){
+        return;
+    }
+
+    if(left < n){
+        dfs(n,left+1,right,res,s+"(");
+    }
+
+    if(right < n){
+        dfs(n,left,right+1,res,s+")");
+    }
+
+}
+```
+
+
+
+### [1011. 在 D 天内送达包裹的能力 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/problems/capacity-to-ship-packages-within-d-days/)
+
+> 二分思想，二分就是在一个区间里面，寻找一个确定的值。这个区间可以是数组可以是一对数。只要是一个区间，数组的话是需要一个排好虚序的数组。不然不能进行二分。这个题目主要是可以将结果的区间进行锁定。我们之间在区间进行判断即可。这个区间便是数组的最大值和数组的和。我们将一个target作为固定值，然后代入判断函数进行判断返回target是否合理。
+
+```java
+public int shipWithinDays(int[] ws, int d) {
+    int max = 0, sum = 0;
+    for (int w : ws) {
+        max = Math.max(max, w);
+        sum += w;
+    }
+    int l = max, r = sum;
+    while (l < r) {
+        int mid = l + r >> 1;
+        if (check(ws, mid, d)) {
+            r = mid;
+        } else {
+            l = mid + 1;
+        }
+    }
+    return r;
+}
+
+boolean check(int[] ws, int mid, int d) {
+    //存储重量
+    int sumWeight = 0;
+    int cnt = 1;
+    for (int i = 0; i < ws.length; i++) {
+
+        if (sumWeight + ws[i] > mid) {
+            sumWeight = 0;
+            cnt++;
+        }
+
+        sumWeight += ws[i];
+
+        if (cnt > d) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+
+
+### [938. 二叉搜索树的范围和 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/problems/range-sum-of-bst/)
+
+> 就是中序遍历 + 剪枝
+
+```java
+public int rangeSumBST(TreeNode root, int low, int high) {
+    if (root == null) {
+        return 0;
+    }
+    if (root.val > high) {
+        return rangeSumBST(root.left, low, high);
+    }
+    if (root.val < low) {
+        return rangeSumBST(root.right, low, high);
+    }
+    return root.val + rangeSumBST(root.left, low, high) + rangeSumBST(root.right, low, high);
+
+}
+```

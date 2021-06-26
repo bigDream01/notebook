@@ -1,0 +1,2 @@
+LinkedHashMap的底层与HashMap底层相同，其主要与hashmap不同的点在entry类上，其在entry类上添加了头和尾，分别指向前一个元素和后一个元素，从而使遍历的速度更加快。
+

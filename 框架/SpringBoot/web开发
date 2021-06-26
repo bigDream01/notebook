@@ -1,0 +1,171 @@
+### 静态资源访问
+
+> 只要静态资源放在类路径下： called `/static` (or `/public` or `/resources` or `/META-INF/resources`
+>
+> 访问 ： 当前项目根路径/ + 静态资源名 
+
+**原理：** 
+
+> 静态映射 : /**。
+>
+> **请求进来，先去找Controller看能不能处理。不能处理的所有请求又都交给静态资源处理器。静态资源也找不到则响应404页面**
+
+**修改默认的访问路径**
+
+```yml
+spring:
+  mvc:
+    static-path-pattern: /res/**
+
+  resources:
+    static-locations: [classpath:/haha/]
+```
+
+
+
+### welcome页面创建
+
+> springBoot提供两种方式创建：
+>
+> > ​	1.可以直接将index.html页面直接放入到静态资源的页面，我们访问时就可以直接访问index.html页面了
+> >
+> > 2.直接跳转到controller处理
+
+**小bug**
+
+> 可以配置静态资源路径
+>
+> 但是不可以配置静态资源的访问前缀。否则导致 index.html不能被默认访问
+
+
+
+### favicon页面访问的网站logo
+
+> 只需要将图片名命名为favicon.ico 放在静态资源目录下即可。
+
+### 请求参数的获取
+
+#### 请求路径参数中的数据获取
+
+> @PathVariable、@RequestHeader、@ModelAttribute、
+>
+> @RequestParam（将访问路径中的参数装配到参数中）、@MatrixVariable、@CookieValue、@RequestBody（接收前端传给后端的json数据）
+
+```java
+    @GetMapping("/car/{id}/owner/{username}")
+    public Map<String,Object> getCar(@PathVariable("id") Integer id,
+                                     @PathVariable("username") String name,
+                                     @PathVariable Map<String,String> pv,
+                                     @RequestHeader("User-Agent") String userAgent,
+                                     @RequestHeader Map<String,String> header,
+                                     @RequestParam("age") Integer age,
+                                     @RequestParam("inters") List<String> inters,
+                                     @RequestParam Map<String,String> params,
+                                     @CookieValue("_ga") String _ga,
+                                     @CookieValue("_ga") Cookie cookie){
+
+
+        Map<String,Object> map = new HashMap<>();
+
+//        map.put("id",id);
+//        map.put("name",name);
+//        map.put("pv",pv);
+//        map.put("userAgent",userAgent);
+//        map.put("headers",header);
+        map.put("age",age);
+        map.put("inters",inters);
+        map.put("params",params);
+        map.put("_ga",_ga);
+        System.out.println(cookie.getName()+"===>"+cookie.getValue());
+        return map;
+```
+
+#### 域中数据的获取@RequestAttribute
+
+> 获取requst域中的数据
+
+```java
+@Controller
+public class requestTestController {
+
+    @GetMapping("/goto")
+    public String setRequestVal(HttpServletRequest request){
+        request.setAttribute("msg","来了。。。。。。");
+        System.out.println("=======");
+        return "forward:/success";
+    }
+
+    @ResponseBody
+    @GetMapping("/success")
+    public Map getRequest(@RequestAttribute("msg") String msg){
+
+        Map<String,Object> map = new HashMap<>();
+
+        map.put("msg",msg);
+        return map;
+    }
+
+
+}
+```
+
+#### 矩阵变量
+
+>  矩阵变量中是存在多个参数的，一个“ ； ”是一个矩阵中的变量。一个“ / ” 是一个矩阵变量 。
+>
+> 使用的话需要手动开启。
+
+```java
+//1、语法： 请求路径：/cars/sell;low=34;brand=byd,audi,yd
+    //2、SpringBoot默认是禁用了矩阵变量的功能
+    //      手动开启：原理。对于路径的处理。UrlPathHelper进行解析。
+    //              removeSemicolonContent（移除分号内容）支持矩阵变量的
+    //3、矩阵变量必须有url路径变量才能被解析
+    @GetMapping("/cars/{path}")
+    public Map carsSell(@MatrixVariable("low") Integer low,
+                        @MatrixVariable("brand") List<String> brand,
+                        @PathVariable("path") String path){
+        Map<String,Object> map = new HashMap<>();
+
+        map.put("low",low);
+        map.put("brand",brand);
+        map.put("path",path);
+        return map;
+    }
+```
+
+### 视图渲染thymeleaf
+
+#### thymeleaf的使用
+
+**先导入依赖**
+
+> ```xml
+>         <dependency>
+>             <groupId>org.springframework.boot</groupId>
+>             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+>         </dependency>
+> ```
+
+**页面开发**
+
+在文件头部导入连接，有提示
+
+> <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+```xml
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <a th:text="${msg}">mei</a>
+    <a href="index.html" th:href="hello.jpg">开始</a>
+    <a href="index.html" th:href="@{hello.jpg}">@开始</a>
+
+</body>
+</html>
+```

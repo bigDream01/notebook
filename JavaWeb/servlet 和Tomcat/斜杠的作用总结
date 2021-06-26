@@ -1,0 +1,13 @@
+在web中浏览器对“  /  ”的解析是
+
+​      HTTP: //localhost:8080
+
+
+
+在服务器下对“ / ”的解析是
+
+​		http： // localhost：8080//工程名
+
+特殊情况
+
+  response.sendRediect("/"): 是将斜杠发个浏览器及解析

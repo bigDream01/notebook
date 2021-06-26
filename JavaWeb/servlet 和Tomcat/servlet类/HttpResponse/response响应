@@ -1,0 +1,39 @@
+**HttpServletResponse 类的作用**** 
+
+> HttpServletResponse 类和 HttpServlet·Request 类一样。每次请求进来，Tomcat 服务器都会创建一个 Response 对象传 递给 Servlet 程序去使用。
+>
+> HttpServletRequest 表示请求过来的信息，HttpServletResponse 表示所有响应的信息， 我们如果需要设置返回给客户端的信息，都可以通过 HttpServletResponse 对象来进行设置
+
+**字符流getWriter()**
+
+> 常用于回传字符串（常用） 两个流同时只能使用一个。 使用了字节流，就不能再使用字符流，反之亦然，否则就会报错。
+
+```java
+public class responsIOservlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        //这是设置服务器的字符集
+//        resp.setCharacterEncoding("UTF-8");
+
+        //同时设置服务器的字符集
+        //限制 : 必须是在获取流之前
+        resp.setContentType("text/html;charset=UTF-8");
+        //向客户端回传数据
+        PrintWriter writer = resp.getWriter();
+
+        writer.write("哈儿");
+
+
+    }
+}
+
+```
+
+**解决字符集不一致问题**
+
+```java
+//解决中文乱码问题
+req.setCharacterEncoding("UTF-8");
+resp.setContentType("Test/html;charset=UTF-8");
+```

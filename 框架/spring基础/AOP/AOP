@@ -1,0 +1,83 @@
+## AOP概述
+
+> AOP(Aspect-Oriented Programming，**面向切面编程**)：是一种新的方法论，是对传统 OOP(Object-Oriented Programming，面向对象编程)的补充。
+
+> AOP编程操作的主要对象是切面(aspect)，而切面**模块化横切关注点**。
+>
+> 在应用AOP编程时，仍然需要定义公共功能，但可以明确的定义这个功能应用在哪里，以什么方式应用，并且不必修改受影响的类。这样一来横切关注点就被模块化到特殊的类里——这样的类我们通常称之为“切面”。
+
+**●AOP的好处：**
+
+> 每个事物逻辑位于一个位置，代码不分散，便于维护和升级
+>
+> 业务模块更简洁，只包含核心业务代码
+
+**常用名词**
+
+![image-20210317105208467](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210317105208467.png)
+
+## 使用步骤
+
+### 一、导包
+
+>  **spring自带包**
+>
+>  spring-aspects-4.0.0.RELEASE.jar:
+>
+> **外部包**
+>
+>  com.springsource.net.sf.cglib-2.2.0.jar
+> 		com.springsource.org.aopalliance-1.0.0.jar
+> 		com.springsource.org.aspectj.weaver-1.6.8.RELEASE.jar
+
+### 二、配置文件
+
+> **切面类**
+>
+> 对于切面类应该先添加到容器中，然后再添加到切面上。（@Aspect@Component）
+>
+> 对于方法的执行顺序，可以通过注解来完成（before，afterReturning，afterThrowing，after）
+>
+> 在其注解内部还需要标注配置的是那个方法用execution来表示
+>
+> > ```java
+> >  @AfterReturning("execution(public int com.atguigu.bean.impl.CalculateImpl.*(int ,int ))")
+> > ```
+> 
+>    **整体案例**
+> 
+> ```java
+>    @Aspect
+>    @Component
+> public class CalculateAspect {
+>    
+>     @Before("execution(public int com.atguigu.bean.impl.CalculateImpl.*(int ,int ))")
+>     public void before() {
+>        System.out.println("begin this game");
+>     }
+>
+>     @AfterReturning("execution(public int com.atguigu.bean.impl.CalculateImpl.*(int ,int ))")
+>     public void afterReturning() {
+>         System.out.println("成功返回");
+>    }
+> 
+>    @AfterThrowing("execution(public int com.atguigu.bean.impl.CalculateImpl.*(int ,int ))")
+>     public void afterThrowing() {
+>         System.out.println("抛出异常");
+>     }
+> 
+>     @After("execution(public int com.atguigu.bean.impl.CalculateImpl.*(int ,int ))")
+>     public void after() {
+>         System.out.println("结束之后");
+>     }
+> }
+> ```
+> 
+> **xml文件配置**
+> 
+> ```xml
+> 
+>     <context:component-scan base-package="com.atguigu"></context:component-scan>
+>     <aop:aspectj-autoproxy ></aop:aspectj-autoproxy>
+> 
+> ```

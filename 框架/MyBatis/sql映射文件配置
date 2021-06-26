@@ -1,0 +1,247 @@
+## 增删改的标签（update）
+
+
+
+| `id`               | 在命名空间中唯一的标识符，可以被用来引用这条语句。           |
+| ------------------ | ------------------------------------------------------------ |
+| `parameterType`    | 将会传入这条语句的参数的类全限定名或别名。这个属性是可选的，因为 MyBatis 可以通过类型处理器（TypeHandler）推断出具体传入语句的参数，默认值为未设置（unset）。 |
+| `parameterMap`     | 用于引用外部 parameterMap 的属性，目前已被废弃。请使用行内参数映射和 parameterType 属性。 |
+| `flushCache`       | 将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，默认值：（对 insert、update 和 delete 语句）true。 |
+| `timeout`          | 这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为未设置（unset）（依赖数据库驱动）。 |
+| `statementType`    | 可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。 |
+| `useGeneratedKeys` | （**仅适用于 insert 和 update）这会令 MyBatis 使用 JDBC 的 getGeneratedKeys 方法来取出由数据库内部生成的主键（比如：像 MySQL 和 SQL Server 这样的关系型数据库管理系统的自动递增字段），**默认值：false。 |
+| `keyProperty`      | （**仅适用于 insert 和 update）指定能够唯一识别对象的属性，MyBatis 会使用 getGeneratedKeys 的返回值或 insert 语句的 selectKey 子元素设置它的值，默认值：未设置（`unset`）。如果生成列不止一个，可以用逗号分隔多个属性名称。** |
+| `keyColumn`        | （仅适用于 insert 和 update）设置生成键值在表中的列名，在某些数据库（像 PostgreSQL）中，当主键列不是表中的第一列的时候，是必须设置的。如果生成列不止一个，可以用逗号分隔多个属性名称。 |
+| `databaseId`       | 如果配置了数据库厂商标识（databaseIdProvider），MyBatis 会加载所有不带 databaseId 或匹配当前 databaseId 的语句；如果带和不带的语句都有，则不带的会被忽略。 |
+
+### 实现自增id的获取
+
+```xml
+
+<!--    
+		useGeneratedKeys：表示开启自增id的获取 
+		keyProperty ： 指定自增id的赋予到那个属性
+
+-->
+<insert id="insertAuthor" useGeneratedKeys="true"
+    keyProperty="id">
+  insert into Author (username, password, email, bio) values
+  <foreach item="item" collection="list" separator=",">
+    (#{item.username}, #{item.password}, #{item.email}, #{item.bio})
+  </foreach>
+</insert>
+```
+
+
+
+
+
+## 查询标签（select）
+
+
+
+### 参数的获取
+
+> 在mybatis中进行参数传递的时候是使用map来存储的，开始的时候我们不会给参数进行key的赋予。多个参数是直接采用
+>
+> map.put("1",参数1)；
+>
+> map.put("2",参数2)；
+>
+> ```xml
+> <!--    public Employee getEmployeeByIdAndUsername(Integer id, String uername);-->
+>     <select id="getEmployeeByIdAndUsername" resultType="com.company.bean.Employee">
+>         select *
+>             from t_employee
+>                 where id=#{id} and username=#{username}
+> 
+>     </select>
+> ```
+>
+> ```java
+> public Employee getEmployeeByIdAndUsername(@Param("id") Integer id, @Param("username") String uername);
+> ```
+>
+> 我们建议无论什么参数是一个还是多个都在参数上给上**@Param注解**
+
+![image-20210423203701596](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210423203701596.png)
+
+
+
+### # { } 和 $ { } 的区别
+
+> •**#{key}****：获取参数的值，**预编译到SQL中**。安全
+>
+> •**${key}****：获取参数的值，**拼接到SQL中**。有SQL注入问题。**ORDER BY ${name}**
+
+### 返回是list和map
+
+> list： 直接查询多个数据其得到的就是list
+>
+> map：
+>
+> > 需要在方法的上面设置那个作为map的key值（一般是使用主键）
+> >
+> > value值是自动封装的整个数据，并且在resultType中是javabean的类型
+>
+> ```xml
+> //查询所有的员工，结果使用map封装
+> @MapKey("id")
+> public Map<Integer,Employee> getEmployeesByMap();
+> ```
+>
+> ```xml
+> <select id="getEmployeesByMap" resultType="com.company.bean.Employee">
+>     select * from t_employee;
+> 
+> </select>
+> ```
+>
+> ```java
+> //使用map作为接收
+> Map<Integer, Employee> employeesByMap = employeeDao.getEmployeesByMap();
+> System.out.println(employeesByMap);
+> ```
+
+### resultMap自定义封装规则
+
+可以自定义封装规则，其使用与resultType是冲突的，resulttype使用的是默认规则
+
+> ```xml
+> <!--    public Cat getCatById(Integer id);-->
+>     <select id="getCatById" resultMap="Cat">
+>         select * from t_cat
+>             where id=#{id}
+>     </select>
+> 
+> <!--
+> 
+>         id : 表示指定为那个bean进行规定
+> -->
+>     <resultMap id="Cat" type="com.company.bean.Cat">
+> <!--
+>             column： 指定那一列为主键
+>             property ：指定Cat中的那个为主键赋予的值
+> 
+> -->
+>         <id  property="id" column="id" ></id>
+> 
+>         <result column="cname" property="name"></result>
+>         <result column="cgender" property="gender"></result>
+> 
+>     </resultMap>
+> ```
+
+### 联合查询
+
+#### 1-1级联属性的包装和查询
+
+**key**
+
+```java
+public class Key {
+
+    private int id;
+    private String keyName;
+    private Lock lock;
+}
+```
+
+**lock**
+
+```java
+public class Lock {
+    private int id;
+    private String lockName;
+}
+```
+
+**映射文件配置**
+
+> 注意别名的设置，不然id会混淆
+
+```xml
+    <select id="getKeyById" resultMap="key">
+
+     SELECT k.id kid,k.keyName,k.lockid,l.id lid,l.lockname FROM t_key k
+            LEFT JOIN t_lock l ON k.`lockid`=l.`id`
+            WHERE k.`id`=#{id};
+    </select>
+
+<!--
+            kid  keyName  lockid     lid  lockname
+ -->
+    <resultMap id="key" type="com.company.bean.Key">
+        <id property="id" column="kid"/>
+        <result property="keyName" column="keyName"/>
+        
+<!--     mybatis推荐,联合查询-->
+        <association property="lock" javaType="com.company.bean.Lock">
+            <id property="id" column="lid"/>
+            <result property="lockName" column="lockname"/>
+        </association>
+```
+
+
+
+#### 1-n级联包装查询
+
+> 外键放到n的那边
+
+**lock**
+
+```java
+public class Lock {
+    private int id;
+    private String lockName;
+    private List<Key> keys;
+}
+```
+
+**key**
+
+```java
+public class Key {
+
+    private int id;
+    private String keyName;
+    private Lock lock;
+    }
+```
+
+**xml映射配置**
+
+```xml
+<mapper namespace="com.company.dao.LockDao">
+<!--
+
+            public Lock getLockById(Integer id);
+
+    -->
+    <select id="getLockById" resultMap="lock">
+        SELECT  l.`id` lid, l.`lockName`,k.`id` kid,k.`keyName`,k.`lockid`  FROM t_lock l
+            LEFT JOIN t_key k ON l.`id`=k.`lockid`
+            WHERE l.`id`=#{id}
+    </select>
+    <!--         lid  lockName       kid  keyName        lockid-->
+        <!--      private int id;
+            private String lockName;
+            private List<Key> keys;-->
+    <resultMap id="lock" type="com.company.bean.Lock">
+        <id property="id" column="lid"></id>
+        <result property="lockName" column="lockName"/>
+
+<!--     ofType : 指定集合中的元素类型
+
+         private int id;
+         private String keyName
+    -->
+        <collection property="keys" ofType="com.company.bean.Key">
+            <id property="id" column="kid"/>
+            <result property="id" column="kid"/>
+            <result property="keyName" column="keyName"/>
+        </collection>
+    </resultMap>
+</mapper>
+```
+

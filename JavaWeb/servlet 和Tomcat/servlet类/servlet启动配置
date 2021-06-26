@@ -1,0 +1,34 @@
+
+
+### servlet配置文件
+
+```xml
+<!--    servlet标签给Tomcat配置servlet程序  -->
+    <servlet>
+            <!-- 给servlet程序起一个别名   -->
+        <servlet-name>servletTest</servlet-name>
+            <!-- 访问类名的地址 -->
+        <servlet-class>Servlethello.servletTest</servlet-class>
+    </servlet>
+
+
+<!--   给servlet程序配置访问地址   -->
+    <servlet-mapping>
+        <!--  告诉服务器，我当前配置的文件给那个servlet程序使用  -->
+        <servlet-name>servletTest</servlet-name>
+
+        <!--
+
+          /  表示在服务器解析的时候，表示地址为：HTTP：/IP：port/工程路径
+          /hello 表示地址为：  HTTP:/IP:port/工程路径/hello
+            
+            就是设置访问地址
+          -->
+        <url-pattern>/hello</url-pattern>
+
+    </servlet-mapping>
+```
+
+### **访问路径**
+
+![image-20201104162142464](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20201104162142464.png)

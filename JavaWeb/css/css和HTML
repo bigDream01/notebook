@@ -1,0 +1,14 @@
+```html
+<link rel="stylesheet" type="text/css" href="cssAndhtml.css">
+```
+
+```css
+div{
+     border: 1px solid royalblue;
+ }
+span{
+    border: 1px solid royalblue;
+}
+```
+
+可以把其当成了一个方法，可以随时的调用

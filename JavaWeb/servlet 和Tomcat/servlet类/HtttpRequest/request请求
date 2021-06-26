@@ -1,0 +1,104 @@
+### 意义：
+
+> 每次请求都会将请求中的数据保存到requst域中，我们直接在requst域直接获取就可以了
+
+### 作用：
+
+> 1.获取请求的参数
+>
+> 2.作为域对象保存数据
+>
+> 3.获取HttpSession = requst.getSession() 对象
+
+**请求文件**
+
+```html
+<form action="http://localhost:8080/Servlethello/hello4" method="get">
+    用户名:<input type="text" name="username"><br/>
+    兴趣爱好：<input type="checkbox" name="hoby" value="cpp"> c++
+    <input type="checkbox" name="hoby" value="Java"> Java
+    <input type="checkbox" name="hoby" value="Js"> Js
+    <br/>
+    <input type="submit">
+</form>
+```
+
+**请求处理**
+
+```java
+//获取name是username的文本
+String username = request.getParameter("username");
+
+//如果是需要获取多个字符就需要使用getParameterValues()
+String[] hobies = request.getParameterValues("hoby");
+
+//修改信息
+request.setAttribute("username","mayebe");
+```
+
+### 请求转发（getRequestDispatcher（）.forward（req，resp））
+
+**首先获取到数据的类的处理**
+
+```java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //1、获取参数
+    String username = request.getParameter("username");
+
+    //2、处理数据
+    System.out.println("第一个servlet处理数据" + username);
+
+
+    //3、给标志物
+    request.setAttribute("key1","first");
+
+    //4、去到标志物
+    //地址的写法：必须是 “/”打头  直接写web.xml 访问地址名就可以了
+    RequestDispatcher requestDispatcher = request.getRequestDispatcher("/servletresponse1");
+
+    //5、走向标识类
+    requestDispatcher.forward(request,response);
+}
+```
+
+**跳转目标类的处理**
+
+```java
+public class ServletResponse1 extends HttpServlet {
+
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        //1、查询处理事件
+        String username = request.getParameter("username");
+        System.out.println(username);
+
+        //2、获取标识物
+        Object value1 = request.getAttribute("key1");
+        System.out.println(value1);//判断是否符合条件
+
+        //3、处理
+        System.out.println("servlet2的处理");
+
+    }
+}
+
+```
+
+### **请求重定向**
+
+> ```java
+> protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+>     System.out.println("经过request1");
+>     //请求重定向
+>     resp.sendRedirect("http://localhost:8080/Servlethello/response2");
+> }
+> ```
+
+**void setCharacterEncoding（）**：设置请求编码
+
+**获取请求头**
+
+```java
+req.getHeader("Referer")
+```

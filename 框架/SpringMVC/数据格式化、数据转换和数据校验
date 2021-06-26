@@ -1,0 +1,202 @@
+# 数据转换
+
+## 应用场景
+
+> 主要是客户端向服务端传输数据的时候，SpringMVC的转换模式。
+>
+> SpringMVC没办法解析数据时，这个时候就需要自定义格式的数据转换模式来进行转换。
+
+
+
+## 实现原理
+
+> ①  Spring MVC 主框架将 ServletRequest 对象及目标方法的入参实例传递给 WebDataBinderFactory 实例，以创建 **DataBinder** 实例对象
+>
+> ②  DataBinder 调用装配在 Spring MVC 上下文中的 **ConversionService** 组件进行**数据类型转换、数据格式化**工作。将 Servlet 中的请求信息填充到入参对象中
+>
+> ③  调用 **Validator** 组件对已经绑定了请求消息的入参对象进行数据合法性校验，并最终生成数据绑定结果 **BindingData** 对象
+>
+> ④  Spring MVC 抽取 **BindingResult** 中的入参对象和校验错误对象，将它们赋给处理方法的响应入参
+
+
+
+## 实现流程
+
+![image-20210414191822748](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210414191822748.png)
+
+## 实现源码
+
+**①将 ServletRequest 对象及目标方法的入参实例传递给 WebDataBinderFactory 实例，以创建 DataBinder 实例对象**
+
+![image-20210414195630925](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210414195630925.png)
+
+**在WebDataBinder对象中存在的属性**
+
+![image-20210414200831515](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210414200831515.png)
+
+
+
+## 自定义转化器的实现
+
+​	①实现**Converter<String, Employee>**接口
+
+> ```java
+> public class test implements Converter<String,Employee> {
+>     @Override
+>     public Employee convert(String source) {
+>         if(source!=null){
+>             String[] strs = source.split("-");
+>             if(strs!=null && strs.length == 4){
+>                 String lastName = strs[0];
+>                 String email = strs[1];
+>                 Integer gender = Integer.parseInt(strs[2]);
+>                 Integer deptId = Integer.parseInt(strs[3]);
+>                 Department dept = new Department();
+>                 dept.setId(deptId);
+>                 Employee employee = new Employee(null,lastName,email,gender,dept);
+>                 System.out.println(source+"--converter--"+employee);
+>                 return employee;
+>             }
+>         }
+>         return null;
+>     }
+> 
+> }
+> ```
+
+②再声明转换器
+
+> ```xml
+> <bean id="conversionService" 
+> 
+>     class="org.springframework.context.support.ConversionServiceFactoryBean">
+> 
+>     <property name="converters">
+> 
+>         <set>
+> 
+>         <!-- 引用类型转换器 -->
+> 
+>         <ref bean="stringToEmployeeConverter"/>
+> 
+>         </set>            
+> 
+>     </property>
+> 
+> </bean>
+> ```
+
+③  <mvc:annotation-driven conversion-service="**conversionService**"/> 会将自定义的
+
+# annotation- driver配置
+
+**配置信息**
+
+```xml
+<mvc:default-servlet-handler/>
+<mvc:annotation-driven></mvc:annotation-driven>
+```
+
+## 配置条件
+
+> ①  直接配置响应的页面：无需经过控制器来执行结果 ；但会导致其他请求路径失效，需要配置mvc:annotation-driven标签
+>
+> >  <mvc:view-controller  path="/success" view-name="success"/>  
+>
+> ②  RESTful-CRUD操作，删除时，通过jQuery执行delete请求时，找不到静态资源，需要配置mvc:annotation-driven标签  
+>
+> >   <mvc:default-servlet-handler/> 将在 SpringMVC 上下文中定义一个  DefaultServletHttpRequestHandler，它会对进入 DispatcherServlet 的请求进行筛查，如果发现是没有经过映射的请求，就将该请求交由 WEB 应用服务器默认的 Servlet 处理，如果不是静态资源的请求，才由 DispatcherServlet 继续处理。  
+>
+> ③  配置类型转换器服务时，需要指定转换器服务引用
+>
+> >  <mvc:annotation-driven conversion-service=“conversionService”/> 会将自定义的ConversionService 注册到 Spring MVC 的上下文中
+>
+> ④  后面完成JSR 303数据验证，也需要配置 
+
+## bug分析
+
+> **mvc:default-servlet-handler不提示问题**
+>
+> > 导错了包，不应该导入缓存的包
+>
+> ![image-20210417112227800](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210417112227800.png)
+
+## 源码分析
+
+> ![image-20210415151746074](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210415151746074.png)
+>
+> ![image-20210415151826098](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210415151826098.png)
+
+# 数据的格式化
+
+> 通过规定数据的格式化，来解决其格式不统一的问题
+
+## 时间格式化
+
+>  **@DateTimeFormat** **注解可对** **java.util.Date**、**java.util.Calendar**、**java.long.Long** **时间类型进行标注**：
+>
+> ```java
+> @DateTimeFormat(pattern="yyyy-MM-dd")
+> ```
+
+## 数字格式化
+
+> **@NumberFormat 可对类似数字类型的属性进行标注**
+>
+> ```java
+> @NumberFormat(pattern="**#,###,###.#**")
+> ```
+
+# 数据校验
+
+### 应用场景
+
+> 只进行前端校验是不安全的，所以是需要后端校验的。**重要数据一定要加数据校验**
+
+### 步骤
+
+> **①导包**
+>
+> >  hibernate-validator-5.0.0.CR2.jar
+> > 		hibernate-validator-annotation-processor-5.0.0.CR2.jar
+> > 		jboss-logging-3.1.1.GA.jar
+> > 		classmate-0.8.0.jar
+> > 		validation-api-1.1.0.CR1.jar
+>
+> **②给需要校验的数据加上注解**
+>
+> > ![image-20210416144338851](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210416144338851.png)
+> >
+> > ![image-20210416144355934](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210416144355934.png)
+> >
+> > **其中注解中的message属性值可以设置，错误信息回显错误信息**
+> >
+> > ```java
+> > 	@NotEmpty(message = "不能为空")
+> > 	private String lastName;
+> > ```
+>
+> **③**给pojo注入的位置添加@Valid Employee employee（**告诉SpringMVC那个需要校验**）, BindingResult result
+>
+> **BindingResult result**
+>
+> > 得到错误信息，其会将错误信息保存到隐含模型中。也可以通过判断BindingResult 这个属性的内部信息来进行数据校验
+>
+> ```java
+>   @RequestMapping(value = "/addEmployee", method = RequestMethod.POST)
+>     public String addEmployee(@Valid Employee employee, BindingResult result){
+>         if (result.hasErrors()) {
+>             return "add";
+>         } else {
+>             employeeDao.save(employee);
+>             return "redirect:/emps";
+>         }
+>     }
+> ```
+>
+> **④在页面得到错误信息是直接在requst域中直接获得，其错误信息的key就是属性的首字母小写**
+
+```
+
+```
+

@@ -1,0 +1,36 @@
+**泛型的格式：**
+
+```java
+List <Integer> list= new ArrayList<Integer>();
+
+list.add(12);
+```
+
+**泛型在集合中的遍历（嵌套）：**
+
+```java
+Set<Map.Entry<Integer, String>> entries = map.entrySet();
+Iterator<Map.Entry<Integer, String>> iterator = entries.iterator();
+
+while (iterator.hasNext()){
+    //因为使用了泛型结构，所以不再使用类型转换
+    Map.Entry<Integer, String> next = iterator.next();
+    System.out.println(next.getKey() + "*********" + next.getValue());
+}
+```
+
+
+
+**注意：**
+
+因为泛型规定了传入的类型，就免去了类型转换的操作。
+
+
+
+使用要点：
+
+> ①在实例化时，可以指定具体的泛型型结构
+>
+> ②在指定泛型后，在集合类或接口时，内部结构中的方法必须使用该定义的泛型-----如：add（指定泛型类型）
+>
+> ③泛型必须是一个类

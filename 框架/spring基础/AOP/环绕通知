@@ -1,0 +1,43 @@
+> 本质上就是一个动态代理，在执行了切入方法的周围添加设置
+
+```java
+@Around("PointcutExpression(){}")
+public Object AroundAspect(ProceedingJoinPoint proceedingJoinPoint) {
+
+    Object[] args = proceedingJoinPoint.getArgs();
+
+    //本质上就是动态代理类似与  method.invoke(类，方法里面的参数);
+    //上面的参数获取的args就是
+    Object proceed = null;
+    try {
+
+        System.out.println("环绕方法的前置");
+        proceed = proceedingJoinPoint.proceed(args);
+        System.out.println("环绕方法的返回");
+    } catch (Throwable throwable) {
+        System.out.println("环绕方法的异常");
+        throw new RuntimeException(throwable);
+    } finally {
+        System.out.println("环绕方法的后置");
+    }
+
+
+    return proceed;
+
+
+}
+```
+
+**执行顺序**
+
+> 在一个切面内环绕方法是最先被执行的，但是跨度到另外一个切面上的时候。环绕方法是管不到的。就如图所示，是一层套一层的，但是在前置通知上存在一定的随机性，在后面的顺序上是一致的。
+
+![image-20210319144943476](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210319144943476.png)
+
+**细节**
+
+> ①环绕通知在获取异常上尽量要往外throw，让外层的切面知道这个异常
+>
+> ②在切面的执行顺序上，一般是按照首字母顺序来进行排序的（默认情况）
+>
+> ​		指定排序是@order（）注解，在参数里面可以指定执行顺序，1最先开始排序

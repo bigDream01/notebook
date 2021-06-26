@@ -1,0 +1,102 @@
+## DDL语言: 对表的数据的增删除
+
+### 一、数据的插入
+
+**语法**：
+
+> insert into 表名（字 段名1，字段名2...） values (值1，值2.....)
+
+**特点**:
+
+> ① 字段和值列表一一对应
+> 包含类型和约束等必须匹配
+>
+> ②字段顺序无要求
+>
+> ③ 插入时要符合限制条件
+>
+> **建库，建表:**
+>
+> ```sql
+> CREATE DATABASE IF NOT EXISTS students;
+> 
+> CREATE TABLE IF NOT EXISTS stuinfo(
+> 	stu_id INT PRIMARY KEY,
+> 	stu_name VARCHAR(10) NOT NULL,
+> 	stu_age INT
+> );
+> 
+> 
+> ```
+
+**#案例1：参数中都不为空**
+
+> ```sql
+> INSERT INTO stuinfo  【(stu_id,stu_name,stu_age)】（可以不写）
+> VALUES (1,'nice',23);
+> ```
+>
+
+**#案例2：参数中存在空**
+
+```sql
+VALUES (2,'nice',NULL);
+```
+
+#**案例3：默认字段如何插入 （不写就可以）**
+
+**如何设置自增长**
+
+**#案例：**
+
+```sql
+CREATE TABLE greadeinfo(
+	greadID INT PRIMARY KEY AUTO_INCREMENT
+	stu_id INT
+);
+```
+
+**设置要求：**
+
+> 1、自增长列要求必须设置在一个键上，比如主键或唯一键
+> 2、自增长列要求数据类型为数值型
+
+### 二、修改数据
+
+**语法：**
+
+> update 表名 set 字段名 = 新值,字段名 = 新值....
+> where 筛选条件
+
+**案例：**
+
+```sql
+UPDATE stuinfo SET stu_age = 9
+WHERE stu_name IS NOT NULL;
+
+SELECT * FROM stuinfo;
+```
+
+### 三、数据的删除
+
+**语法**：
+
+> 方式一：delete语句
+>        语法：delete from 表名 where 筛选条件
+>         方式二：truncate语句
+
+**DELETE 和 TRUNCATE的区别**
+
+> 一、DELETE 可以添加条件，而TRUNCATE是将表全部删除          
+>
+> 二、TRUNCATE的效率较高
+>
+> 三、如果删除带自增长列的表
+> 	使用DELETE删除后，从新插入数据，记录从断点处开始
+> 	使用TRUNCATE删除后，从新插入数据，记录从1开始;
+>
+> 四、DELETE 删除数据，会返回受影响的行数
+>     TRUNCATE 删除数据，不返回受影响的行数
+>    
+>五、DELETE 删除数据，可以支持事务回滚
+>  TRUNCATE删除数据，不可以支持事务回滚

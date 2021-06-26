@@ -1,0 +1,32 @@
+```html
+<head>
+    <meta charset="UTF-8">
+    <title>选择器</title>
+    <style type="text/css">
+
+        #id1002{
+            color: red;
+        }
+        .class200{
+           color: aqua;
+        }
+        #id1003,.class300{
+            color: darkgoldenrod;
+        }
+
+    </style>
+
+
+
+</head>
+<body>
+    <div id="id1002">div标签</div>
+    <div class="class200">div标签1</div>
+    <div class="class300"> div</div>
+
+</body>
+```
+
+在标签选择器的时候其实就是调用方法一样，前面定义了一个方法，对其进行调用，
+
+在组合标签上使用哪个标签都是可以的，都可以对数据进行处理

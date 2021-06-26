@@ -1,0 +1,199 @@
+### 请求参数的处理
+
+> Spring MVC 通过分析处理方法的签名，HTTP请求信息绑定到处理方法的相应人参中。
+>
+> Spring MVC 对控制器处理方法签名的限制是很宽松的，几乎可以按喜欢的任何方式对方法进行签名。 
+>
+> 必要时可以对方法及方法入参标注相应的注解（ @PathVariable 、@RequestParam、@RequestHeader 等）、
+>
+> Spring MVC 框架会将 HTTP 请求的信息绑定到相应的方法入参中，并根据方法的返回值类型做出相应的后续处理。
+
+#### RequestParam
+
+> ```java
+> /**
+>  * 获取域中参数的值:
+>  *           value 用于映射请求参数名称
+>  *           required 用于设置请求参数是否必须的
+>  *           defaultValue 设置默认值，当没有传递参数时使用该值
+>  * @return
+>  */
+>     @RequestMapping("/requestParam")
+>     public String requstTest(@RequestParam(value = "username",required = false,defaultValue = "username")String username){
+>         System.out.println("参数名是： " + username);
+>         return "success";
+> 
+>     }
+> 
+>```
+> 
+
+#### RequestHeader 
+
+> ```java
+> /**
+>  * 获取域中参数的值:
+>  *           value 用于映射请求参数名称
+>  *           required 用于设置请求参数是否必须的
+>  *           defaultValue 设置默认值，当没有传递参数时使用该值
+>  * @return
+>  */
+> @RequestMapping("/requstHeadTest")
+> public String requstHeadTest(@RequestHeader("User-Agent")String userAgent){
+>     System.out.println("参数名是： " + userAgent);
+>     return "success";
+> 
+> }
+> ```
+
+### pojo注入
+
+> 在自动装配的对象中可以直接注入到实体类中，还能实现级联注入。
+>
+> **注意点**
+>
+> > 在使用这个功能的时候一定将客户端的数据与服务器端的数据匹配，如果p**ojo注入的对象跟我们创建的bean属性不一致时，会服务器发送请求方式错误。**
+
+**注入的方法对象**
+
+> ```java
+> @RequestMapping("/book")
+> public String pojoTest(Book book){
+>     System.out.println(book);
+>     return "success";
+> }
+> ```
+
+**浏览器页面**
+
+> ```html
+> <form action="book">
+>   书名：<input type="text" name="name"><br/>
+>   作者：<input type="text" name="author"><br/>
+>   价格：<input type="text" name="price"><br/>
+>   库存：<input type="text" name="stock"><br/>
+>   <hr>
+>   地区：<input type="text" name="address.city">
+>   街道：<input type="text" name="address.street">
+>   <input type="submit" value="提交"><br/>
+> </form>
+> ```
+
+**实体类**
+
+> ```java
+> public class Book {
+> 
+>     private String name;
+>     private String author;
+>     private double price;
+>     private Integer stock;
+>     private Address address;
+> 
+>     public String getName() {
+>         return name;
+>     }
+> 
+>     public void setName(String name) {
+>         this.name = name;
+>     }
+> 
+>     public String getAuthor() {
+>         return author;
+>     }
+> 
+>     public void setAuthor(String author) {
+>         this.author = author;
+>     }
+> 
+>     public double getPrice() {
+>         return price;
+>     }
+> 
+>     public void setPrice(double price) {
+>         this.price = price;
+>     }
+> 
+>     public Integer getStock() {
+>         return stock;
+>     }
+> 
+>     public void setStock(Integer stock) {
+>         this.stock = stock;
+>     }
+> 
+>     public Address getAddress() {
+>         return address;
+>     }
+> 
+>     public void setAddress(Address address) {
+>         this.address = address;
+>     }
+> 
+>     @Override
+>     public String toString() {
+>         return "Book{" +
+>                 "name='" + name + '\'' +
+>                 ", author='" + author + '\'' +
+>                 ", price=" + price +
+>                 ", stock=" + stock +
+>                 ", address=" + address +
+>                 '}';
+>     }
+> }
+> ```
+>
+> ```java
+> public class Address {
+> 
+>     private String country;
+>     private String street;
+> 
+>     public String getCountry() {
+>         return country;
+>     }
+> 
+>     public void setCountry(String country) {
+>         this.country = country;
+>     }
+> 
+>     public String getStreet() {
+>         return street;
+>     }
+> 
+>     public void setStreet(String street) {
+>         this.street = street;
+>     }
+> 
+>     @Override
+>     public String toString() {
+>         return "Address{" +
+>                 "country='" + country + '\'' +
+>                 ", street='" + street + '\'' +
+>                 '}';
+>     }
+> }
+> ```
+
+### SpringMVC的注入的乱码问题
+
+> ![image-20210329195942161](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210329195942161.png)
+
+### 从服务器端向浏览器端传输的域数据的获取
+
+> 在springMVC中配置了原生的request和session的接口，可以直接调用接口进行域数据的传输
+>
+> ```java
+> @RequestMapping("/scope")
+> public String pojoTest(@RequestParam("username")String name, HttpServletRequest request, HttpSession session){
+> 
+>     HttpSession session1 = request.getSession();
+>     request.setAttribute("test",name);
+>     session1.setAttribute("key",name + "session1");
+>     session.setAttribute("key","value");
+>     return "success";
+> }
+> ```
+>
+> ![image-20210330100226356](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210330100226356.png)
+

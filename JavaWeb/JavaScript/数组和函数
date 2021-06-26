@@ -1,0 +1,61 @@
+### 数组
+
+```html
+<script type="text/javascript">
+    var arr = [];
+    arr[0];
+    //javascrip 中数组会进行自动扩容
+    //由于其为弱类型的编辑语言，那么其数组内的元素是可以不同类型的
+    arr[2] = "hello";
+
+    for(var i = 0; i<arr.length; i++){
+        alert(arr[i]);
+    }
+
+</script>
+```
+
+### 函数的定义方式和arguments的使用
+
+```html
+ <script type="text/javascript">
+   //第一种定义方式
+        //无参函数定义
+        function fun() {
+            alert("好玩");
+        }
+        // fun();
+        //有参函数
+        function fun1(a,b) {
+            alert("hfuafk");
+        }
+        // fun1(1,2);  //只有===的时候才会调用
+   //带有返回值的元素定义
+        function fun3(c) {
+          return c;
+        }
+       // alert(fun3("c"));
+
+   //第二种定义方式
+        var fun4 = function (a,b) {
+            var c =  a + b;
+            return c;
+        }
+        // alert(fun4(1,2));
+
+		//函数中的 arguments 相当于是参数的数组
+        var fun5 = function (a,b) {
+            var c = 0;
+            for(var i = 0; i < arguments.length; i++){
+                c += arguments[i];
+            }
+            return c;
+        }
+        alert(fun5(1,2,3,6));
+
+    </script>
+```
+
+**arguments**
+
+> arguments只能在function中调用，其主要是获取参数的属性情况（长度，数值）。其在调用获得的参数是数组类型，在进行取值的时候需要类似与数组的操作。

@@ -1,0 +1,56 @@
+```java
+static String user;
+static String url;
+static String driver;
+static String password;
+
+static {
+    try {
+        //获取读取配置文件流,这个流很特殊，只能读取存在于内存中的配置信息
+        //所以就需要对文件进行序列化
+        Properties pros = new Properties();
+
+        //序列化和读取配置文件
+        pros.load(new FileInputStream("JDBCTest1\\src\\jdbc.propertice"));
+
+        user = pros.getProperty("user");
+        url = pros.getProperty("url");
+        driver = pros.getProperty("driver");
+        password = pros.getProperty("password");
+
+        //1.注册驱动
+        Class.forName(driver);
+    } catch (Exception e) {
+       throw new RuntimeException();
+
+    }
+}
+    public static java.sql.Connection getConnection() throws SQLException {
+
+    //2.获取连接
+
+        try {
+            return DriverManager.getConnection(url, user, password);
+        } catch (SQLException e) {
+            throw new RuntimeException();
+        }
+    }
+
+//关闭连接
+public static void close(ResultSet resultSet,PreparedStatement statement, Connection connection){
+
+    try {
+        if(resultSet != null){
+            resultSet.close();
+        }
+        if (statement != null){
+            statement.close();
+        }
+        if(connection != null){
+            connection.close();
+        }
+    } catch (SQLException e) {
+       throw new RuntimeException();
+    }
+}
+```

@@ -1,0 +1,49 @@
+### 调用属性 [泛型](..\泛型) 
+
+```java
+public static void main(String[] args) throws Exception {
+
+    //调用运行时指定的属性
+    //1.获取运行时对象
+    Class<?> clazz = Class.forName("ReflectionTest.Person");
+    Person p = (Person) clazz.newInstance();
+
+    //2.指定访问的属性名
+    Field age = clazz.getDeclaredField("age");
+
+    //3.设置访问许可（属性设置为无法正常访问时需要设定）
+    age.setAccessible(true);
+
+    //4.访问对象
+    age.set(p,36);
+    System.out.println(p);
+
+}
+```
+
+### 反射中对方法的调用
+
+```java
+//非静态方法的调用
+//1.获取运行时的对象
+Class<?> clazz = Class.forName("ReflectionTest.Person");
+
+Person person = (Person) clazz.newInstance();
+
+//2.获取要调用的方法
+Method show = clazz.getDeclaredMethod("show", String.class);
+
+//3.获取私有方法的调取权限
+show.setAccessible(true);
+//4.调用方法
+String get = (String) show.invoke(person, "hi");
+System.out.println(get);
+
+//静态方法的调用
+Method hi = clazz.getDeclaredMethod("hi");
+
+hi.setAccessible(true);
+
+String getHi = (String) hi.invoke(person);
+System.out.println(getHi);
+```

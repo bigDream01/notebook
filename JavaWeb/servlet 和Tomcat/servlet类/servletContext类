@@ -1,0 +1,60 @@
+介绍：
+
+>  servletContext类主要是用于获取对应服务器配置信息的
+
+> ```xml
+> <context-param>
+>     <param-name>username</param-name>
+>     <param-value>username</param-value>
+> </context-param>
+> 
+> <context-param>
+>     <param-name>password</param-name>
+>     <param-value>root</param-value>
+> </context-param>
+> ```
+
+**作用：**
+
+> 一、可以像map一样存取数据，其在一个工程中只创建一个，所以在不同的程序下获取到的数据是互通的
+>
+> ```java
+> Contest.setAttribute("key1","value1");
+> Contest.getAttribute("key1")
+> ```
+>
+> 二、 获取当前工程路径
+>
+> ```java
+>   String contextPath = servletContext.getContextPath();
+>   System.out.println("当前工程路径" + contextPath);
+> ```
+>
+> 三、获取绝对路径
+>
+> ```java
+>   //获取绝对路径
+>   // "/" 对应的是web路径下----> 这样在后面可以获取web目录下的文件
+>   System.out.println(servletContext.getRealPath("/"));
+> ```
+>
+> 四、获取配置文件的信息
+>
+> ```java
+> String username = servletContext.getInitParameter("username");
+> System.out.println("context 访问： " + username);
+> ```
+>
+> 五、获取响应流
+>
+> ```java
+> //可以访问web中的存储文件（用于下载） 
+> InputStream resourceAsStream = servletContext.getResourceAsStream("/file/" + downloadFileName);
+> ```
+>
+> 六、获取文件类型
+>
+> ```java
+> //4.在回传前通过响应头，告诉客户端下载的数据类型
+> String type = servletContext.getMimeType("/file/" + downloadFileName);//获取下载的类型
+> ```
