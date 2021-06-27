@@ -1,4 +1,4 @@
-### 静态资源访问
+## 1. 静态资源访问
 
 > 只要静态资源放在类路径下： called `/static` (or `/public` or `/resources` or `/META-INF/resources`
 >
@@ -23,7 +23,7 @@ spring:
 
 
 
-### welcome页面创建
+#### welcome页面创建
 
 > springBoot提供两种方式创建：
 >
@@ -39,13 +39,123 @@ spring:
 
 
 
-### favicon页面访问的网站logo
+#### favicon页面访问的网站logo
 
 > 只需要将图片名命名为favicon.ico 放在静态资源目录下即可。
 
-### 请求参数的获取
+## 2. 请求参数处理
 
-#### 请求路径参数中的数据获取
+### 1.请求映射
+
+**rest处理**
+
+> 当请求参数相同的情况下，对请求处理位置的判断
+
+### 2.rest使用与原理
+
+**rest的使用**
+
+- @xxxMapping；
+
+  > XXX 表示请求方式
+
+  
+
+- Rest风格支持（*使用**HTTP**请求方式动词来表示对资源的操作*）
+
+
+
+-  /user*    *GET-**获取用户*    *DELETE-**删除用户*     *PUT-**修改用户*      *POST-**保存用户*
+
+- 核心Filter；HiddenHttpMethodFilter
+
+- 用法： 表单method=post，隐藏域 _method=put
+- SpringBoot中手动开启
+
+**Rest原理（表单提交要使用REST的时候）**
+
+- 表单提交会带上**_method=PUT**
+- **请求过来被**HiddenHttpMethodFilter拦截
+
+- 请求是否正常，并且是POST
+
+- 获取到**_method**的值。
+- 兼容以下请求；**PUT**.**DELETE**.**PATCH**
+
+- **原生request（post），包装模式requesWrapper重写了getMethod方法，返回的是传入的值。**
+- **过滤器链放行的时候用wrapper。以后的方法调用getMethod是调用requesWrapper的**
+
+### 3.请求路径的原理
+
+
+
+![image-20210626223550089](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210626223550089.png)
+
+```java
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    HttpServletRequest processedRequest = request;
+    HandlerExecutionChain mappedHandler = null;
+    boolean multipartRequestParsed = false;
+
+    WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+
+    try {
+        ModelAndView mv = null;
+        Exception dispatchException = null;
+
+        try {
+            processedRequest = checkMultipart(request);
+            multipartRequestParsed = (processedRequest != request);
+
+            // 找到当前请求使用哪个Handler（Controller的方法）处理
+            mappedHandler = getHandler(processedRequest);
+
+            //HandlerMapping：处理器映射。/xxx->>xxxx
+```
+
+**getHandler方法得到请求地址**
+
+```java
+protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+    if (this.handlerMappings != null) {
+        for (HandlerMapping mapping : this.handlerMappings) {
+            HandlerExecutionChain handler = mapping.getHandler(request);
+            if (handler != null) {
+                return handler;
+            }
+        }
+    }
+    return null;
+}
+```
+
+主要有以下五个handlerMapping（分别从这五个handler查找mapping地址）
+
+![image-20210626223844510](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210626223844510.png)
+
+**RequestMappingHandlerMapping**：保存了所有@RequestMapping 和handler的映射规则。
+
+![image-20210626224255452](C:\Users\大梦\AppData\Roaming\Typora\typora-user-images\image-20210626224255452.png)
+
+#### 总结
+
+> 所有的请求映射都在HandlerMapping中。
+>
+> - SpringBoot自动配置欢迎页的 WelcomePageHandlerMapping 。访问 /能访问到index.html；**使用请求转发实现的**
+> - SpringBoot自动配置了默认 的 RequestMappingHandlerMapping
+>
+> - 请求进来，挨个尝试所有的HandlerMapping看是否有请求信息。
+>
+> - 如果有就找到这个请求对应的handler
+> - 如果没有就是下一个 HandlerMapping
+>
+> - 我们需要一些自定义的映射处理，我们也可以自己给容器中放**HandlerMapping**。自定义 **HandlerMapping**
+
+
+
+### 4.请求参数的获取
+
+#### 1. 请求路径参数中的数据获取
 
 > @PathVariable、@RequestHeader、@ModelAttribute、
 >
@@ -80,7 +190,7 @@ spring:
         return map;
 ```
 
-#### 域中数据的获取@RequestAttribute
+#### 2.域中数据的获取@RequestAttribute
 
 > 获取requst域中的数据
 
@@ -109,7 +219,7 @@ public class requestTestController {
 }
 ```
 
-#### 矩阵变量
+#### 3. 矩阵变量
 
 >  矩阵变量中是存在多个参数的，一个“ ； ”是一个矩阵中的变量。一个“ / ” 是一个矩阵变量 。
 >
@@ -133,6 +243,319 @@ public class requestTestController {
         return map;
     }
 ```
+
+#### 4. 请求参数的获取原理
+
+##### 1. 执行请求处理器handlerAdapter
+
+> HandlerMapping中找到能处理请求的Handler（Controller.method()）
+>
+> - 为当前Handler 找一个适配器 HandlerAdapter； **如RequestMappingHandlerAdapter**
+>
+> - 适配器执行目标方法并确定方法参数的每一个值
+
+有以下四种handleradpater
+
+![image.png](https://cdn.nlark.com/yuque/0/2020/png/1354552/1603262942726-107353bd-f8b7-44f6-93cf-2a3cad4093cf.png)
+
+##### 2. 执行目标方法
+
+```java
+// Actually invoke the handler. //DispatcherServlet -- doDispatch 
+mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+```
+
+```java
+mav = invokeHandlerMethod(request, response, handlerMethod);
+//执行目标方法  //ServletInvocableHandlerMethod 
+Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs); 
+//获取方法的参数值 
+Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
+```
+
+##### 3. 确定参数解析器
+
+> 确定方法的每一个参数的值，
+>
+> 使用的是一参数解析器
+
+SpringMVC内置的参数解析器
+
+![image.png](https://cdn.nlark.com/yuque/0/2020/png/1354552/1603263283504-85bbd4d5-a9af-4dbf-b6a2-30b409868774.png?x-oss-process=image%2Fwatermark%2Ctype_d3F5LW1pY3JvaGVp%2Csize_10%2Ctext_YXRndWlndS5jb20g5bCa56GF6LC3%2Ccolor_FFFFFF%2Cshadow_50%2Ct_80%2Cg_se%2Cx_10%2Cy_10)
+
+选到支持的参数解析器的时候就执行方法 resolveArgument（）
+
+##### 4. 返回值处理器
+
+![image.png](https://cdn.nlark.com/yuque/0/2020/png/1354552/1603263524227-386da4be-43b1-4b17-a2cc-8cf886346af9.png?x-oss-process=image%2Fwatermark%2Ctype_d3F5LW1pY3JvaGVp%2Csize_10%2Ctext_YXRndWlndS5jb20g5bCa56GF6LC3%2Ccolor_FFFFFF%2Cshadow_50%2Ct_80%2Cg_se%2Cx_10%2Cy_10)
+
+##### 5. 如何确定一个参数
+
+```java
+============InvocableHandlerMethod==========================
+protected Object[] getMethodArgumentValues(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
+                                           Object... providedArgs) throws Exception {
+
+    MethodParameter[] parameters = getMethodParameters();
+    if (ObjectUtils.isEmpty(parameters)) {
+        return EMPTY_ARGS;
+    }
+
+    Object[] args = new Object[parameters.length];
+    for (int i = 0; i < parameters.length; i++) {
+        MethodParameter parameter = parameters[i];
+        parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
+        args[i] = findProvidedArgument(parameter, providedArgs);
+        if (args[i] != null) {
+            continue;
+        }
+        if (!this.resolvers.supportsParameter(parameter)) {
+            throw new IllegalStateException(formatArgumentError(parameter, "No suitable resolver"));
+        }
+        try {
+            //这里执行参数解析
+            args[i] = this.resolvers.resolveArgument(parameter, mavContainer, request, this.dataBinderFactory);
+        }
+        catch (Exception ex) {
+            // Leave stack trace for later, exception may actually be resolved and handled...
+            if (logger.isDebugEnabled()) {
+                String exMsg = ex.getMessage();
+                if (exMsg != null && !exMsg.contains(parameter.getExecutable().toGenericString())) {
+                    logger.debug(formatArgumentError(parameter, exMsg));
+                }
+            }
+            throw ex;
+        }
+    }
+    return args;
+}
+```
+
+###### 1. 如何确定参数值细节
+
+> 先看缓存中是否存在，之后挨个调用解析器，解析到为止。解析到直接保存到缓存中
+
+```java
+@Nullable
+private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parameter) {
+    HandlerMethodArgumentResolver result = this.argumentResolverCache.get(parameter);
+    if (result == null) {
+        for (HandlerMethodArgumentResolver resolver : this.argumentResolvers) {
+            if (resolver.supportsParameter(parameter)) {
+                result = resolver;
+                this.argumentResolverCache.put(parameter, result);
+                break;
+            }
+        }
+    }
+    return result;
+}
+```
+
+###### 2. pojo注入
+
+1. 先判断参数是否是简单数据类型，
+
+2. 不是的话，得到参数的类型，
+
+3. 在WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);**得到参数的对象**
+
+4. WebDataBinder :web数据绑定器，将请求参数的值绑定到指定的JavaBean里面（**WebDataBinder 利用它里面的 Converters 将请求数据转成指定的数据类型。再次封装到JavaBean中**）
+
+   
+
+其自带的类型转换器
+
+![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1603338486441-9bbd22a9-813f-49bd-b51b-e66c7f4b8598.png?x-oss-process=image%2Fwatermark%2Ctype_d3F5LW1pY3JvaGVp%2Csize_10%2Ctext_YXRndWlndS5jb20g5bCa56GF6LC3%2Ccolor_FFFFFF%2Cshadow_50%2Ct_80%2Cg_se%2Cx_10%2Cy_10)
+
+自定义WebDataBinder 转换器
+
+```java
+//1、WebMvcConfigurer定制化SpringMVC的功能
+@Bean
+public WebMvcConfigurer webMvcConfigurer(){
+    return new WebMvcConfigurer() {
+        @Override
+        public void configurePathMatch(PathMatchConfigurer configurer) {
+            UrlPathHelper urlPathHelper = new UrlPathHelper();
+            // 不移除；后面的内容。矩阵变量功能就可以生效
+            urlPathHelper.setRemoveSemicolonContent(false);
+            configurer.setUrlPathHelper(urlPathHelper);
+        }
+
+        @Override
+        public void addFormatters(FormatterRegistry registry) {
+            registry.addConverter(new Converter<String, Pet>() {
+
+                @Override
+                public Pet convert(String source) {
+                    // 啊猫,3
+                    if(!StringUtils.isEmpty(source)){
+                        Pet pet = new Pet();
+                        String[] split = source.split(",");
+                        pet.setName(split[0]);
+                        pet.setAge(Integer.parseInt(split[1]));
+                        return pet;
+                    }
+                    return null;
+                }
+            });
+        }
+    };
+}
+```
+
+
+
+
+
+
+
+
+
+##### 6. 目标方法执行完成
+
+将所有的数据都放在 **ModelAndViewContainer**；包含要去的页面地址View。还包含Model数据
+
+![image.png](https://cdn.nlark.com/yuque/0/2020/png/1354552/1603272018605-1bce3142-bdd9-4834-a028-c753e91c52ac.png?x-oss-process=image%2Fwatermark%2Ctype_d3F5LW1pY3JvaGVp%2Csize_10%2Ctext_YXRndWlndS5jb20g5bCa56GF6LC3%2Ccolor_FFFFFF%2Cshadow_50%2Ct_80%2Cg_se%2Cx_10%2Cy_10)
+
+
+
+##### 7.将参数的值注入到requst中
+
+> 先是将**ModelAndViewContainer**中的数据转化为**mergemodel** 之后，将数据保存到域中
+
+```java
+InternalResourceView：
+@Override
+protected void renderMergedOutputModel(
+        Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+    // Expose the model object as request attributes.
+    exposeModelAsRequestAttributes(model, request);
+
+    // Expose helpers as request attributes, if any.
+    exposeHelpers(request);
+
+    // Determine the path for the request dispatcher.
+    String dispatcherPath = prepareForRendering(request, response);
+
+    // Obtain a RequestDispatcher for the target resource (typically a JSP).
+    RequestDispatcher rd = getRequestDispatcher(request, dispatcherPath);
+    if (rd == null) {
+        throw new ServletException("Could not get RequestDispatcher for [" + getUrl() +
+                "]: Check that the corresponding file exists within your web application archive!");
+    }
+
+    // If already included or response already committed, perform include, else forward.
+    if (useInclude(request, response)) {
+        response.setContentType(getContentType());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Including [" + getUrl() + "]");
+        }
+        rd.include(request, response);
+    }
+
+    else {
+        // Note: The forwarded resource is supposed to determine the content type itself.
+        if (logger.isDebugEnabled()) {
+            logger.debug("Forwarding to [" + getUrl() + "]");
+        }
+        rd.forward(request, response);
+    }
+}
+```
+
+填入requst中的数据逻辑
+
+```java
+protected void exposeModelAsRequestAttributes(Map<String, Object> model,
+                                              HttpServletRequest request) throws Exception {
+
+    //model中的所有数据遍历挨个放在请求域中
+    model.forEach((name, value) -> {
+        if (value != null) {
+            request.setAttribute(name, value);
+        }
+        else {
+            request.removeAttribute(name);
+        }
+    });
+}
+```
+
+### 3. 内容返回和数据协商
+
+#### 1. 返回值解析器过程
+
+> - 1、返回值处理器判断是否支持这种类型返回值 supportsReturnType
+> - 2、返回值处理器调用 handleReturnValue 进行处理
+>
+> - 3、RequestResponseBodyMethodProcessor 可以处理返回值标了@ResponseBody 注解的。
+>   - \1.  利用 MessageConverters 进行处理 将数据写为json
+>     - 1、内容协商（浏览器默认会以请求头的方式告诉服务器他能接受什么样的内容类型）
+>     - 2、服务器最终根据自己自身的能力，决定服务器能生产出什么样内容类型的数据，
+>     - 3、SpringMVC会挨个遍历所有容器底层的 HttpMessageConverter ，看谁能处理？
+>       - 1、得到MappingJackson2HttpMessageConverter可以将对象写为json
+>       - 2、利用MappingJackson2HttpMessageConverter将对象转为json再写出去
+
+#### 2. 内容协商原理
+
+###### 1 .  参数设置内容协商
+
+为了方便内容协商，开启基于请求参数的内容协商功能。
+
+```yaml
+spring:
+    contentnegotiation:
+      favor-parameter: true  #开启请求参数内容协商模式
+```
+
+发请求： http://localhost:8080/test/person?format=json
+
+[http://localhost:8080/test/person?format=](http://localhost:8080/test/person?format=json)xml
+
+
+
+![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1605230907471-b0ed34bc-6782-40e7-84b7-615726312f01.png?x-oss-process=image%2Fwatermark%2Ctype_d3F5LW1pY3JvaGVp%2Csize_10%2Ctext_YXRndWlndS5jb20g5bCa56GF6LC3%2Ccolor_FFFFFF%2Cshadow_50%2Ct_80%2Cg_se%2Cx_10%2Cy_10)
+
+确定客户端接收什么样的内容类型；
+
+1、Parameter策略优先确定是要返回json数据（获取请求头中的format的值）
+
+![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1605231074299-25f5b062-2de1-4a09-91bf-11e018d6ec0e.png)
+
+2、最终进行内容协商返回给客户端json即可。
+
+###### 2. 数据转换原理
+
+> 先寻找适合的文本转换器，将服务端要求的数据拿来对比，找到对象的文本转换器。
+>
+> > 在springBoot内部自带了很多的类型转换器，但服务端来了很多的文本要求，根据权重进行选择
+>
+> 之后进行文本转换。返回到客户端。
+
+###### 3. **具体流程**
+
+- 1、判断当前响应头中是否已经有确定的媒体类型。MediaType
+- 2、获取客户端（PostMan、浏览器）支持接收的内容类型。（获取客户端Accept请求头字段）【application/xml】
+
+- contentNegotiationManager 内容协商管理器 默认使用基于请求头的策略
+- ![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1605230462280-ef98de47-6717-4e27-b4ec-3eb0690b55d0.png)
+
+- HeaderContentNegotiationStrategy  确定客户端可以接收的内容类型 
+- ![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1605230546376-65dcf657-7653-4a58-837a-f5657778201a.png)
+
+- 3、遍历循环所有当前系统的 **MessageConverter**，看谁支持操作这个对象（Person）
+- 4、找到支持操作Person的converter，把converter支持的媒体类型统计出来。
+
+- 5、客户端需要【application/xml】。服务端能力【10种、json、xml】
+-   ![img](https://cdn.nlark.com/yuque/0/2020/png/1354552/1605173876646-f63575e2-50c8-44d5-9603-c2d11a78adae.png)
+
+- 6、进行内容协商的最佳匹配媒体类型
+- 7、用 支持 将对象转为 最佳匹配媒体类型 的converter。调用它进行转化 
+
+
 
 ### 视图渲染thymeleaf
 
@@ -169,3 +592,92 @@ public class requestTestController {
 </body>
 </html>
 ```
+
+### 拦截器
+
+```java
+/**
+ * 1、编写一个拦截器实现HandlerInterceptor接口
+ * 2、拦截器注册到容器中（实现WebMvcConfigurer的addInterceptors）
+ * 3、指定拦截规则【如果是拦截所有，静态资源也会被拦截】
+ */
+@Configuration
+public class AdminWebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new LoginInterceptor())
+                .addPathPatterns("/**")  //所有请求都被拦截包括静态资源
+                .excludePathPatterns("/","/login","/css/**","/fonts/**","/images/**","/js/**"); //放行的请求
+    }
+}
+```
+
+```java
+/**
+     * 登录检查
+     * 1、配置好拦截器要拦截哪些请求
+     * 2、把这些配置放在容器中
+     */
+    @Slf4j
+    public class LoginInterceptor implements HandlerInterceptor {
+
+        /**
+         * 目标方法执行之前
+         * @param request
+         * @param response
+         * @param handler
+         * @return
+         * @throws Exception
+         */
+        @Override
+        public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+
+            String requestURI = request.getRequestURI();
+            log.info("preHandle拦截的请求路径是{}",requestURI);
+
+            //登录检查逻辑
+            HttpSession session = request.getSession();
+
+            Object loginUser = session.getAttribute("loginUser");
+
+            if(loginUser != null){
+                //放行
+                return true;
+            }
+
+            //拦截住。未登录。跳转到登录页
+            request.setAttribute("msg","请先登录");
+//        re.sendRedirect("/");
+            request.getRequestDispatcher("/").forward(request,response);
+            return false;
+        }
+
+        /**
+         * 目标方法执行完成以后
+         * @param request
+         * @param response
+         * @param handler
+         * @param modelAndView
+         * @throws Exception
+         */
+        @Override
+        public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+            log.info("postHandle执行{}",modelAndView);
+        }
+
+        /**
+         * 页面渲染以后
+         * @param request
+         * @param response
+         * @param handler
+         * @param ex
+         * @throws Exception
+         */
+        @Override
+        public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+            log.info("afterCompletion执行异常{}",ex);
+        }
+    }
+```
+
