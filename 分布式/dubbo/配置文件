@@ -1,0 +1,151 @@
+## ssm配置
+
+#### 服务提供者
+
+1、引入dubb
+
+```xml
+         <!-- 引入dubbo -->
+
+    <dependency>
+
+     <groupId>com.alibaba</groupId>
+
+      <artifactId>dubbo</artifactId>
+
+      <version>2.6.2</version>
+
+    </dependency>
+
+  <!-- 由于我们使用zookeeper作为注册中心，所以需要操作zookeeper
+
+dubbo 2.6以前的版本引入zkclient操作zookeeper 
+
+dubbo 2.6及以后的版本引入curator操作zookeeper
+
+下面两个zk客户端根据dubbo版本2选1即可
+
+-->
+
+    <dependency>
+
+      <groupId>com.101tec</groupId>
+
+      <artifactId>zkclient</artifactId>
+
+     <version>0.10</version>
+
+   </dependency>
+    <!-- curator-framework -->
+    <dependency>
+
+      <groupId>org.apache.curator</groupId>
+      <artifactId>curator-framework</artifactId>
+       <version>2.12.0</version>
+
+    </dependency>
+```
+
+2、配置提供者
+
+```xml
+2、配置提供者
+<!--当前应用的名字  -->
+<dubbo:application name="gmall-user"></dubbo:application>
+<!--指定注册中心的地址  -->
+<dubbo:registry address="zookeeper://118.24.44.169:2181" />
+<!--使用dubbo协议，将服务暴露在20880端口  -->
+<dubbo:protocol name="dubbo" port="20880" />
+<!-- 指定需要暴露的服务 -->
+<dubbo:service interface="com.atguigu.gmall.service.UserService" ref="userServiceImpl" />
+```
+
+#### 服务消费者
+
+引入dubbo
+
+```xml
+
+<!-- 引入dubbo -->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>dubbo</artifactId>
+    <version>2.6.2</version>
+</dependency>
+<!-- 由于我们使用zookeeper作为注册中心，所以需要引入zkclient和curator操作zookeeper -->
+<dependency>
+    <groupId>com.101tec</groupId>
+    <artifactId>zkclient</artifactId>
+    <version>0.10</version>
+</dependency>
+<!-- curator-framework -->
+<dependency>
+    <groupId>org.apache.curator</groupId>
+    <artifactId>curator-framework</artifactId>
+    <version>2.12.0</version>
+</dependency>
+```
+
+2、配置消费者信息
+
+```xml
+
+<!-- 应用名 -->
+<dubbo:application name="gmall-order-web"></dubbo:application>
+<!-- 指定注册中心地址 -->
+<dubbo:registry address="zookeeper://118.24.44.169:2181" />
+<!-- 生成远程服务代理，可以和本地bean一样使用demoService -->
+<dubbo:reference id="userService" interface="com.atguigu.gmall.service.UserService"></dubbo:reference>
+```
+
+
+
+## SpringBoot
+
+**1、引入spring-boot-starter以及dubbo和curator的依赖**
+
+```xml
+<dependency>
+    <groupId>com.alibaba.boot</groupId>
+    <artifactId>dubbo-spring-boot-starter</artifactId>
+    <version>0.2.0</version>
+</dependency>
+```
+
+**2、配置application.properties**
+
+```properties
+#提供者配置：
+dubbo.application.name=gmall-user
+dubbo.registry.protocol=zookeeper
+dubbo.registry.address=192.168.67.159:2181
+dubbo.scan.base-package=com.atguigu.gmall
+dubbo.protocol.name=dubbo
+##application.name就是服务名，不能跟别的dubbo提供端重复
+#消费者配置：
+dubbo.application.name=gmall-order-web
+dubbo.registry.protocol=zookeeper
+dubbo.registry.address=192.168.67.159:2181
+dubbo.scan.base-package=com.atguigu.gmall
+dubbo.protocol.name=dubbo
+```
+
+**3、dubbo注解**
+
+> @Service、@Reference
+>
+> **【如果没有在配置中写dubbo.scan.base-package,还需要使用@EnableDubbo注解】**
+
+## 其的配置
+
+```xml
+ <!--
+        超时全局设置 10分钟
+        check=false 不检查服务提供方，开发阶段建议设置为false
+        check=true 启动时检查服务提供方，如果服务提供方没有启动则报错
+        retries  尝试与提供者连接的次数
+        version 实现版本更新，灰度发布
+    -->
+    <dubbo:consumer timeout="600000" check="false" retries="3" version="1.0.0"/>
+```
+
