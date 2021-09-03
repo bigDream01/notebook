@@ -374,7 +374,7 @@ cp /opt/redis-3.2.5/redis.conf /myredis
 
 
 
-### SSet**类型**
+### ZSet**类型**
 
 **简介**
 
